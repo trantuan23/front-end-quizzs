@@ -1,3 +1,5 @@
+import Navbar from "@/components/home/navbar";
+
 const HomeLayout = async ({
   children,
 }: Readonly<{
@@ -5,6 +7,7 @@ const HomeLayout = async ({
 }>) => {
   return (
     <div>
+      <Navbar/>
         {children}
       </div>
   );
