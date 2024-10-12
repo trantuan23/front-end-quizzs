@@ -1,13 +1,10 @@
 import QuizzPage from '@/components/admin/quizz/quizz';
-import { Button } from '@/components/ui/button';
-import React from 'react';
 
-const AdminQuizz = () => {
+const AdminQuizzPage = () => {
   return (
     <div>
       <QuizzPage/>
     </div>
   );
 }
-
-export default AdminQuizz;
+export default AdminQuizzPage;

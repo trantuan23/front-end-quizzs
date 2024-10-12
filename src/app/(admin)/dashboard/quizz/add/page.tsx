@@ -1,4 +1,4 @@
-import AddQuizzPage from '@/components/admin/quizz/add/add-quizz';
+import AddQuizzPage from '@/components/admin/quizz/addquizz';
 import React from 'react';
 
 const AddQuizz = () => {

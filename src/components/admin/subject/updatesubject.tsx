@@ -3,14 +3,15 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ClassType } from "@/app/types/class.type";
 import { useToast } from "@/hooks/use-toast";
-import { updateClass } from "@/app/actions/classes/updateclass";
-import Link from "next/link";
 
-const UpdateClassPage = ({ classId }: { classId: string }) => {
-  const [classData, setClassData] = useState<Omit<ClassType, "class_id">>({
-    class_name: "",
+import Link from "next/link";
+import { Subject } from "@/app/types/subject.type";
+import { updateSubject } from "@/app/actions/subject.action";
+
+const UpdateSubjectPage = ({ subjectId }: { subjectId: string }) => {
+  const [subjectData, setSubjectData] = useState<Omit<Subject, "subject_id">>({
+    subject_name: "",
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -19,12 +20,14 @@ const UpdateClassPage = ({ classId }: { classId: string }) => {
   useEffect(() => {
     const fetchClassData = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/classes/${classId}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subjects/${subjectId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch class data");
         }
         const data = await response.json();
-        setClassData({ class_name: data.data.class_name });
+        console.log(data);
+        
+        setSubjectData({ subject_name: data.subject_name }); 
       } catch (error) {
         toast({
           title: "Lỗi",
@@ -35,10 +38,10 @@ const UpdateClassPage = ({ classId }: { classId: string }) => {
     };
 
     fetchClassData();
-  }, [classId]);
+  }, [subjectId]);
 
   const handleUpdateClass = async () => {
-    if (!classData.class_name) {
+    if (!subjectData.subject_name) {
       toast({
         title: "Error",
         description: "Class name is required",
@@ -50,13 +53,13 @@ const UpdateClassPage = ({ classId }: { classId: string }) => {
     setLoading(true);
 
     try {
-      const res = await updateClass(classId, classData);
+      const res = await updateSubject(subjectId, subjectData); 
       toast({
         title: "Thành công!",
         description: res.data.message,
         variant: "default",
       });
-      router.push("/dashboard/class");
+      router.push("/dashboard/subject");  // Sửa liên kết
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -68,29 +71,31 @@ const UpdateClassPage = ({ classId }: { classId: string }) => {
     }
   };
 
+
   
 
   return (
     <div className="w-full max-w-lg mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Cập nhật lớp</h2>
+      <h2 className="text-2xl font-bold mb-4">Cập nhật môn học</h2>
       <div className="mb-4">
         <Input
-          placeholder="Nhập tên lớp"
-          value={classData.class_name}
+          placeholder="Nhập tên môn học"
+          value={subjectData.subject_name}
           onChange={(e) =>
-            setClassData({ ...classData, class_name: e.target.value })
+            setSubjectData({ ...subjectData, subject_name: e.target.value })
           }
         />
       </div>
       <div className="mt-4 justify-between space-x-7">
-      <Button onClick={handleUpdateClass} disabled={loading}>
-        {loading ? "Đang tải lên ..." : "Cập nhật"}
-      </Button>
-      <Link href="/dashboard/class"><Button variant="destructive">Back to</Button></Link>
+        <Button onClick={handleUpdateClass} disabled={loading}>
+          {loading ? "Đang tải lên ..." : "Cập nhật"}
+        </Button>
+        <Link href="/dashboard/subject">
+          <Button variant="destructive">Trở lại</Button>  {/* Đổi liên kết */}
+        </Link>
       </div>
-     
     </div>
   );
 };
 
-export default UpdateClassPage;
+export default UpdateSubjectPage;

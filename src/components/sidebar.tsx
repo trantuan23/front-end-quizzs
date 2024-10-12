@@ -9,6 +9,7 @@ import {
   ListCheckIcon,
   ListCollapse,
   ListIcon,
+  User2Icon,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -37,6 +38,13 @@ export default function Sidebar() {
             <AwardIcon className="h-5 w-5 mr-2 text-green-400" />
             <Link href="/dashboard/quizz">
               <span className="text-base font-medium">Quizz</span>
+            </Link>
+          </li>
+
+          <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
+            <User2Icon className="h-5 w-5 mr-2 text-red-500" />
+            <Link href="/dashboard/users">
+              <span className="text-base font-medium">Users</span>
             </Link>
           </li>
 
@@ -73,6 +81,11 @@ export default function Sidebar() {
                 <Link href="/dashboard/class">
                   <li className="p-2 hover:bg-gray-700 rounded-lg cursor-pointer">
                     Class
+                  </li>
+                </Link>
+                <Link href="/dashboard/subject">
+                  <li className="p-2 hover:bg-gray-700 rounded-lg cursor-pointer">
+                    Subject
                   </li>
                 </Link>
                 <li className="p-2 hover:bg-gray-700 rounded-lg cursor-pointer">

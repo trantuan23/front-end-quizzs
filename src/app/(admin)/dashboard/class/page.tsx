@@ -1,5 +1,4 @@
 import ClassPage from '@/components/admin/class/class';
-import React from 'react';
 
 const AdminClassPage = () => {
     return (
@@ -8,5 +7,4 @@ const AdminClassPage = () => {
         </div>
     );
 }
-
 export default AdminClassPage;
