@@ -1,35 +1,43 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
+import { Question } from "@/app/types/question.type";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Trash, ArrowLeft, ArrowRight } from "lucide-react";
-import { Quiz } from "@/app/types/quizz.type";
-import { deleteQuiz, fetchQuizzes } from "@/app/actions/quizz.action";
-import Link from "next/link";
+import { deleteQuestion, fetchQuestions } from "@/app/actions/question.action";
 
-const QuizPage = () => {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+const QuestionsPage = () => {
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [quizToDelete, setQuizToDelete] = useState<{
+  const [questionToDelete, setQuestionToDelete] = useState<{
     id: string;
-    name: string;
+    text: string;
   } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const quizzesPerPage = 5;
+  const questionsPerPage = 5;
   const [totalPages, setTotalPages] = useState<number>(0);
+  const [jsonString, setJsonString] = useState<string>("");
 
-  const loadQuizzes = async () => {
+  const loadQuestions = async () => {
     setLoading(true);
     try {
-      const data = await fetchQuizzes();
-      setQuizzes(data);
-      setTotalPages(Math.ceil(data.length / quizzesPerPage));
+      const response = await fetchQuestions();
+      const questionArray = Array.isArray(response.data) ? response.data : [];
+
+      setQuestions(questionArray);
+      setTotalPages(Math.ceil(questionArray.length / questionsPerPage));
+
+      const json = JSON.stringify(questionArray, null, 2);
+      setJsonString(json);
     } catch (error: any) {
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể lấy danh sách quiz.",
+        description: error.message || "Không thể lấy danh sách câu hỏi.",
         variant: "destructive",
       });
     } finally {
@@ -37,51 +45,63 @@ const QuizPage = () => {
     }
   };
 
+  const questionTypeMapping: Record<string, string> = {
+    multiple_choice: "Chọn câu hỏi",
+    drag_drop: "Kéo thả đáp án",
+    audio_guess: "Nghe",
+  };
+
   useEffect(() => {
-    loadQuizzes();
+    loadQuestions();
   }, []);
 
-  const handleDelete = async () => {
-    if (!quizToDelete) return;
+  const handleDeleteQuestion = async () => {
+    if (!questionToDelete) return;
+    setDeleting(true);
     try {
-      await deleteQuiz(quizToDelete.id);
+      await deleteQuestion(questionToDelete.id);
       toast({
-        title: "Thành công",
-        description: `Quiz ${quizToDelete.name} đã được xóa.`,
+        title: "Thành công!",
+        description: `Câu hỏi đã được xóa.`,
         variant: "default",
       });
-      loadQuizzes();
-      setQuizToDelete(null);
-    } catch (error: any) {
+      setQuestions((prevQuestions) =>
+        prevQuestions.filter((q) => q.question_id !== questionToDelete.id)
+      );
+      setQuestionToDelete(null);
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể xóa quiz.",
+        description: "Không thể xóa câu hỏi.",
         variant: "destructive",
       });
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const filteredQuizzes = quizzes.filter((quiz) =>
-    quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredQuestions = questions.filter((q) =>
+    q.question_text.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const indexOfLastQuiz = currentPage * quizzesPerPage;
-  const indexOfFirstQuiz = indexOfLastQuiz - quizzesPerPage;
-  const currentQuizzes = filteredQuizzes.slice(
-    indexOfFirstQuiz,
-    indexOfLastQuiz
+  const indexOfLastQuestion = currentPage * questionsPerPage;
+  const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
+  const currentQuestions = filteredQuestions.slice(
+    indexOfFirstQuestion,
+    indexOfLastQuestion
   );
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <Input
-          placeholder="Tìm kiếm quiz..."
+          placeholder="Tìm kiếm câu hỏi..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
         />
-       <Link href="/dashboard/quizz/add"> <Button className="flex items-center gap-2">Thêm mới</Button></Link>
+        <Link href="/dashboard/question/add">
+          <Button className="flex items-center gap-2">Thêm mới</Button>
+        </Link>
       </div>
 
       {loading ? (
@@ -92,49 +112,46 @@ const QuizPage = () => {
             <thead>
               <tr>
                 <th className="border border-gray-300 px-4 py-2">ID</th>
-                <th className="border border-gray-300 px-4 py-2">Tiêu đề</th>
-                <th className="border border-gray-300 px-4 py-2">Mô tả</th>
-                <th className="border border-gray-300 px-4 py-2">Người thực hiện</th>
-                <th className="border border-gray-300 px-4 py-2">Thời gian thực hiện</th>
+                <th className="border border-gray-300 px-4 py-2">
+                  Nội dung câu hỏi
+                </th>
+                <th className="border border-gray-300 px-4 py-2">Loại</th>
                 <th className="border border-gray-300 px-4 py-2">Hành động</th>
               </tr>
             </thead>
             <tbody>
-              {currentQuizzes.length > 0 ? (
-                currentQuizzes.map((quizzData) => (
+              {currentQuestions.length > 0 ? (
+                currentQuestions.map((question) => (
                   <tr
-                    key={quizzData.quizz_id}
+                    key={question.question_id}
                     className="hover:bg-gray-100 transition-colors"
                   >
                     <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.quizz_id}
+                      {question.question_id}
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.title}
+                      {question.question_text}
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.description}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.user.username}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.time}
+                      {questionTypeMapping[question.question_type] ||
+                        "Không xác định"}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-                      <Link href={`/dashboard/quizz/update/${quizzData.quizz_id}`}>
-                      <Button
-                        className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
-                        variant="ghost"
+                      <Link
+                        href={`/dashboard/question/update/${question.question_id}`}
                       >
-                        <Edit size={16} />
-                      </Button>
+                        <Button
+                          className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
+                          variant="ghost"
+                        >
+                          <Edit size={16} />
+                        </Button>
                       </Link>
                       <Button
                         onClick={() =>
-                          setQuizToDelete({
-                            id: quizzData.quizz_id,
-                            name: quizzData.title,
+                          setQuestionToDelete({
+                            id: question.question_id,
+                            text: question.question_text,
                           })
                         }
                         className="p-2 text-red-600 hover:bg-red-100 transition-all"
@@ -142,14 +159,16 @@ const QuizPage = () => {
                       >
                         <Trash size={16} />
                       </Button>
-                     
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center border border-gray-300 px-4 py-2">
-                    Không có kết quả.
+                  <td
+                    colSpan={5}
+                    className="text-center border border-gray-300 px-4 py-2"
+                  >
+                    Không có câu hỏi nào.
                   </td>
                 </tr>
               )}
@@ -191,20 +210,20 @@ const QuizPage = () => {
         </div>
       )}
 
-      {quizToDelete && (
+      {questionToDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold">Xác nhận xoá</h3>
-            <p>Bạn có chắc chắn muốn xoá quiz {quizToDelete.name}?</p>
+            <p>Bạn có chắc chắn muốn xoá câu hỏi "{questionToDelete.text}"?</p>
             <div className="flex justify-end mt-4">
               <Button
                 variant="outline"
-                onClick={() => setQuizToDelete(null)}
+                onClick={() => setQuestionToDelete(null)}
                 className="mr-2"
               >
                 Huỷ
               </Button>
-              <Button onClick={handleDelete} className="text-red-500">
+              <Button onClick={handleDeleteQuestion} className="text-red-500">
                 Xoá
               </Button>
             </div>
@@ -215,4 +234,4 @@ const QuizPage = () => {
   );
 };
 
-export default QuizPage;
+export default QuestionsPage;

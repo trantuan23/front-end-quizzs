@@ -4,84 +4,97 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Trash, ArrowLeft, ArrowRight } from "lucide-react";
-import { Quiz } from "@/app/types/quizz.type";
-import { deleteQuiz, fetchQuizzes } from "@/app/actions/quizz.action";
+import { Option } from "@/app/types/option.type";
+import { deleteOption, fetchOption } from "@/app/actions/option.action";
 import Link from "next/link";
 
-const QuizPage = () => {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+const OptionPage = () => {
+  const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [quizToDelete, setQuizToDelete] = useState<{
+  const [optionToDelete, setOptionToDelete] = useState<{
     id: string;
-    name: string;
+    text: string;
   } | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const quizzesPerPage = 5;
+  const optionsPerPage = 5;
   const [totalPages, setTotalPages] = useState<number>(0);
 
-  const loadQuizzes = async () => {
+  const loadOptions = async () => {
     setLoading(true);
     try {
-      const data = await fetchQuizzes();
-      setQuizzes(data);
-      setTotalPages(Math.ceil(data.length / quizzesPerPage));
+      const data = await fetchOption();
+      // Kiểm tra xem dữ liệu có phải là một mảng không
+      if (Array.isArray(data)) {
+        setOptions(data);
+        setTotalPages(Math.ceil(data.length / optionsPerPage));
+      } else {
+        setOptions([]); // Đặt giá trị rỗng nếu không phải là mảng
+        toast({
+          title: "Lỗi",
+          description: "Dữ liệu không hợp lệ.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể lấy danh sách quiz.",
+        description: error.message || "Không thể lấy danh sách tùy chọn.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
-    loadQuizzes();
+    loadOptions();
   }, []);
 
   const handleDelete = async () => {
-    if (!quizToDelete) return;
+    if (!optionToDelete) return;
     try {
-      await deleteQuiz(quizToDelete.id);
+      await deleteOption(optionToDelete.id);
       toast({
         title: "Thành công",
-        description: `Quiz ${quizToDelete.name} đã được xóa.`,
+        description: `Tùy chọn ${optionToDelete.text} đã được xóa.`,
         variant: "default",
       });
-      loadQuizzes();
-      setQuizToDelete(null);
+      loadOptions();
+      setOptionToDelete(null);
     } catch (error: any) {
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể xóa quiz.",
+        description: error.message || "Không thể xóa tùy chọn.",
         variant: "destructive",
       });
     }
   };
 
-  const filteredQuizzes = quizzes.filter((quiz) =>
-    quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOptions = options.filter((option) =>
+    option.option_text.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const indexOfLastQuiz = currentPage * quizzesPerPage;
-  const indexOfFirstQuiz = indexOfLastQuiz - quizzesPerPage;
-  const currentQuizzes = filteredQuizzes.slice(
-    indexOfFirstQuiz,
-    indexOfLastQuiz
+  const indexOfLastOption = currentPage * optionsPerPage;
+  const indexOfFirstOption = indexOfLastOption - optionsPerPage;
+  const currentOptions = filteredOptions.slice(
+    indexOfFirstOption,
+    indexOfLastOption
   );
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <Input
-          placeholder="Tìm kiếm quiz..."
+          placeholder="Tìm kiếm tùy chọn..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
         />
-       <Link href="/dashboard/quizz/add"> <Button className="flex items-center gap-2">Thêm mới</Button></Link>
+        <Link href="/dashboard/option/add">
+          <Button className="flex items-center gap-2">Thêm mới</Button>
+        </Link>
       </div>
 
       {loading ? (
@@ -92,49 +105,45 @@ const QuizPage = () => {
             <thead>
               <tr>
                 <th className="border border-gray-300 px-4 py-2">ID</th>
-                <th className="border border-gray-300 px-4 py-2">Tiêu đề</th>
-                <th className="border border-gray-300 px-4 py-2">Mô tả</th>
-                <th className="border border-gray-300 px-4 py-2">Người thực hiện</th>
-                <th className="border border-gray-300 px-4 py-2">Thời gian thực hiện</th>
+                <th className="border border-gray-300 px-4 py-2">Tùy chọn</th>
+                <th className="border border-gray-300 px-4 py-2">Đúng/Sai</th>
+                <th className="border border-gray-300 px-4 py-2">ID Câu hỏi</th>
                 <th className="border border-gray-300 px-4 py-2">Hành động</th>
               </tr>
             </thead>
             <tbody>
-              {currentQuizzes.length > 0 ? (
-                currentQuizzes.map((quizzData) => (
+              {currentOptions.length > 0 ? (
+                currentOptions.map((optionData) => (
                   <tr
-                    key={quizzData.quizz_id}
+                    key={optionData.option_id}
                     className="hover:bg-gray-100 transition-colors"
                   >
                     <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.quizz_id}
+                      {optionData.option_id}
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.title}
+                      {optionData.option_text}
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.description}
+                      {optionData.is_correct ? "Đúng" : "Sai"}
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.user.username}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {quizzData.time}
+                      {optionData.questionId}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-                      <Link href={`/dashboard/quizz/update/${quizzData.quizz_id}`}>
-                      <Button
-                        className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
-                        variant="ghost"
-                      >
-                        <Edit size={16} />
-                      </Button>
+                      <Link href={`/dashboard/option/update/${optionData.option_id}`}>
+                        <Button
+                          className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
+                          variant="ghost"
+                        >
+                          <Edit size={16} />
+                        </Button>
                       </Link>
                       <Button
                         onClick={() =>
-                          setQuizToDelete({
-                            id: quizzData.quizz_id,
-                            name: quizzData.title,
+                          setOptionToDelete({
+                            id: optionData.option_id,
+                            text: optionData.option_text,
                           })
                         }
                         className="p-2 text-red-600 hover:bg-red-100 transition-all"
@@ -142,7 +151,6 @@ const QuizPage = () => {
                       >
                         <Trash size={16} />
                       </Button>
-                     
                     </td>
                   </tr>
                 ))
@@ -191,15 +199,15 @@ const QuizPage = () => {
         </div>
       )}
 
-      {quizToDelete && (
+      {optionToDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold">Xác nhận xoá</h3>
-            <p>Bạn có chắc chắn muốn xoá quiz {quizToDelete.name}?</p>
+            <p>Bạn có chắc chắn muốn xoá tùy chọn {optionToDelete.text}?</p>
             <div className="flex justify-end mt-4">
               <Button
                 variant="outline"
-                onClick={() => setQuizToDelete(null)}
+                onClick={() => setOptionToDelete(null)}
                 className="mr-2"
               >
                 Huỷ
@@ -215,4 +223,4 @@ const QuizPage = () => {
   );
 };
 
-export default QuizPage;
+export default OptionPage;

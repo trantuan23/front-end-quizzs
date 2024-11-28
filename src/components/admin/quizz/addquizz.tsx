@@ -103,7 +103,7 @@ const AddQuizForm = () => {
       <div className="mb-4">
         <Select value={userId} onValueChange={setUserId} required>
           <SelectTrigger>
-            <SelectValue placeholder="Chọn người thực hiện" />
+            <SelectValue placeholder="Giáo viên cho đề" />
           </SelectTrigger>
           <SelectContent>
             {userList.map((user) => (

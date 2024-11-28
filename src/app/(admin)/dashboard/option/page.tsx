@@ -1,4 +1,4 @@
-import OptionPage from '@/components/admin/option';
+import OptionPage from '@/components/admin/option/option';
 import React from 'react';
 
 const AdminOptionPage = () => {

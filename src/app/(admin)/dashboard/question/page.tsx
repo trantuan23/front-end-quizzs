@@ -1,10 +1,11 @@
-import QuestionPage from '@/components/admin/question';
+
+import QuestionsPage from '@/components/admin/question/question';
 import React from 'react';
 
 const AdminQuestionPage = () => {
     return (
         <div>
-         <QuestionPage/> 
+        <QuestionsPage/>
         </div>
     );
 }

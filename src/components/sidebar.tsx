@@ -1,6 +1,7 @@
 "use client";
 
 import { useSidebar } from "@/context/SidebarContext";
+import { OpacityIcon } from "@radix-ui/react-icons";
 import {
   AwardIcon,
   ChevronDownIcon,
@@ -38,6 +39,13 @@ export default function Sidebar() {
             <AwardIcon className="h-5 w-5 mr-2 text-green-400" />
             <Link href="/dashboard/quizz">
               <span className="text-base font-medium">Quizz</span>
+            </Link>
+          </li>
+
+          <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
+            <OpacityIcon className="h-5 w-5 mr-2 text-green-400" />
+            <Link href="/dashboard/option">
+              <span className="text-base font-medium">Option</span>
             </Link>
           </li>
 
