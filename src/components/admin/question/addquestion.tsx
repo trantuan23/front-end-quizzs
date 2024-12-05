@@ -40,30 +40,36 @@ const AddQuestionForm = () => {
     getQuizzes();
   }, []);
 
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const createQuestionDto: Question = {
+    const createQuestionDto: Partial<Question> = {
       question_text: questionText,
       question_type: questionType,
       quizzId: quizzId,
-      media_url: mediaUrl,
+    
     };
 
+
+    if (mediaUrl) {
+      createQuestionDto.media_url = mediaUrl;
+    }
+
     try {
-      const response = await createQuestion(createQuestionDto);
+      const response = await createQuestion(createQuestionDto as Question);
       toast({
         title: "Thêm câu hỏi thành công",
-        description: `Câu hỏi "${response.question_text}" đã được thêm vào quiz.`,
+        description: `Câu hỏi "${response.data.question_text}" đã được thêm.`,
         variant: "default",
       });
       router.push("/dashboard/question");
     } catch (error: any) {
-      const errorMessage = error.message || "Có lỗi không xác định xảy ra.";
       toast({
         title: "Lỗi",
-        description: errorMessage,
+        description: error.message || "Có lỗi không xác định xảy ra.",
         variant: "destructive",
       });
     } finally {
@@ -136,18 +142,16 @@ const AddQuestionForm = () => {
             placeholder="URL media (nếu có)"
             value={mediaUrl}
             onChange={(e) => setMediaUrl(e.target.value)}
-            required={true}
             className="w-full"
           />
         </div>
       )}
-
       {/* Nút thêm */}
       <div className="flex justify-between gap-4">
         <Button
           type="submit"
           disabled={loading}
-          className="w-full  hover:bg-slate-400"
+          className="w-full hover:bg-slate-400"
         >
           {loading ? "Đang thêm câu hỏi..." : "Tiếp tục và thêm câu hỏi "}
         </Button>

@@ -1,212 +1,143 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {  QuestionType, updateQuestiontype } from "@/app/types/question.type";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 import { updateQuestion } from "@/app/actions/question.action";
-import { fetchQuizzes } from "@/app/actions/quizz.action";
-import { Question, QuestionType } from "@/app/types/question.type";
-import { Quiz } from "@/app/types/quizz.type";
 
-const UpdateQuestionForm = ({ questionId }: { questionId: string }) => {
-  const [questionText, setQuestionText] = useState<string>("");
-  const [questionType, setQuestionType] = useState<QuestionType>(QuestionType.audio_guess);
-  const [quizList, setQuizList] = useState<Quiz[]>([]);
-  const [quizz_id, setQuizId] = useState<string>("");
-  const [mediaUrl, setMediaUrl] = useState<string>("");
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({
-    A: "",
-    B: "",
-    C: "",
-    D: "",
+const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
+  const [questionData, setQuestionData] = useState<updateQuestiontype>({
+    question_text: "",
+    question_type: QuestionType ,
+    media_url: ""
   });
-
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const getQuizzes = async () => {
+    const fetchQuestionData = async () => {
       try {
-        const data = await fetchQuizzes();
-        setQuizList(data);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/questions/${questionId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch question data");
+        }
+        const data = await response.json();
+        setQuestionData({
+          question_text: data.data.question_text,
+          question_type: data.data.question_type,
+          media_url: data.data.media_url || "",
+
+        });
       } catch (error) {
-        console.error("Lỗi khi tải danh sách quizzes:", error);
+        toast({
+          title: "Lỗi",
+          description: "Không thể lấy dữ liệu câu hỏi.",
+          variant: "default",
+        });
       }
     };
 
-    const getQuestion = async () => {
-        try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/questions/${questionId}`
-          );
-          if (!response.ok) throw new Error("Không thể tải dữ liệu câu hỏi.");
-      
-          const data: Question = await response.json();
-      
-          // Đảm bảo dữ liệu hợp lệ trước khi gán
-          const quiz = data?.quizz || {};
-          const parsedAnswers = data?.answers?.split(",") || ["", "", "", ""];
-      
-          setQuestionText(data?.question_text || "");
-          setQuestionType(data?.question_type || QuestionType.audio_guess);
-          setQuizId(quiz?.quizz_id || "");
-          setMediaUrl(data?.media_url || "");
-          setAnswers({
-            A: parsedAnswers[0] || "",
-            B: parsedAnswers[1] || "",
-            C: parsedAnswers[2] || "",
-            D: parsedAnswers[3] || "",
-          });
-        } catch (error) {
-          toast({
-            title: "Lỗi",
-            description: "Không thể tải dữ liệu câu hỏi.",
-            variant: "destructive",
-          });
-          console.error(error);
-        }
-      };
-      
-
-    getQuizzes();
-    getQuestion();
+    fetchQuestionData();
   }, [questionId]);
 
-  const handleAnswerChange = (key: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const formattedAnswers = Object.values(answers).join(",");
-
-    const updateQuestionDto: Question = {
-      question_text: questionText,
-      question_type: questionType,
-      quizzId: quizz_id,
-      media_url: mediaUrl,
-      answers: formattedAnswers,
-    };
-
-    try {
-      const response = await updateQuestion(questionId, updateQuestionDto);
+  const handleUpdateQuestion = async () => {
+    if (!questionData.question_text) {
       toast({
-        title: "Cập nhật thành công",
-        description: `Câu hỏi "${response.question_text}" đã được cập nhật.`,
+        title: "Lỗi",
+        description: "Nội dung câu hỏi là bắt buộc",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    setLoading(true);
+  
+    try {
+      const res = await updateQuestion(questionId , questionData);
+      
+      toast({
+        title: "Thành công!",
+        description: res.message,
         variant: "default",
       });
       router.push("/dashboard/question");
-    } catch (error: any) {
-      const errorMessage = error.message || "Có lỗi không xác định xảy ra.";
+    } catch (error) {
       toast({
         title: "Lỗi",
-        description: errorMessage,
+        description: "Không thể cập nhật câu hỏi.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg space-y-6"
-    >
-      <h1 className="text-xl font-semibold text-center">Cập Nhật Câu Hỏi</h1>
-
-      {/* Chọn Quiz */}
-      <div>
-        <Select value={quizz_id} onValueChange={setQuizId} required>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Chọn quiz cho câu hỏi" />
-          </SelectTrigger>
-          <SelectContent>
-            {quizList.map((item) => (
-              <SelectItem key={item.quizz_id} value={item.quizz_id}>
-                {item.title || "Quiz không tên"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="w-full max-w-lg mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Cập nhật câu hỏi</h2>
 
       {/* Nội dung câu hỏi */}
-      <div>
+      <div className="mb-4">
         <Input
           placeholder="Nội dung câu hỏi"
-          value={questionText}
-          onChange={(e) => setQuestionText(e.target.value)}
-          required
-          className="w-full"
+          value={questionData.question_text}
+          onChange={(e) =>
+            setQuestionData({ ...questionData, question_text: e.target.value })
+          }
         />
       </div>
 
       {/* Loại câu hỏi */}
-      <div>
+      <div className="mb-4">
         <Select
-          value={questionType}
-          onValueChange={(value) => setQuestionType(value as QuestionType)}
-          required
+          value={questionData.question_type}
+          onValueChange={(value) =>
+            setQuestionData({ ...questionData, question_type: value as QuestionType })
+          }
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Chọn loại câu hỏi" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={QuestionType.audio_guess}>
-              Đoán âm thanh
-            </SelectItem>
-            <SelectItem value={QuestionType.multiple_choice}>
-              Trắc nghiệm
-            </SelectItem>
+            <SelectItem value={QuestionType.audio_guess}>Đoán âm thanh</SelectItem>
+            <SelectItem value={QuestionType.multiple_choice}>Trắc nghiệm</SelectItem>
             <SelectItem value={QuestionType.drag_drop}>Kéo thả</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* URL Media */}
-      {questionType === QuestionType.audio_guess && (
-        <div>
+      {/* Media URL */}
+      {questionData.question_type === QuestionType.audio_guess && (
+        <div className="mb-4">
           <Input
             placeholder="URL media (nếu có)"
-            value={mediaUrl}
-            onChange={(e) => setMediaUrl(e.target.value)}
-            className="w-full"
+            value={questionData.media_url}
+            onChange={(e) =>
+              setQuestionData({ ...questionData, media_url: e.target.value })
+            }
           />
         </div>
       )}
 
-      {/* Các đáp án */}
-      <div className="grid grid-cols-2 gap-4">
-        {["A", "B", "C", "D"].map((key) => (
-          <Input
-            key={key}
-            placeholder={`Đáp án ${key}`}
-            value={answers[key]}
-            onChange={(e) => handleAnswerChange(key, e.target.value)}
-            className="w-full"
-          />
-        ))}
-      </div>
-
-      {/* Nút cập nhật */}
-      <div>
-        <Button type="submit" disabled={loading} className="w-full">
-          {loading ? "Đang cập nhật..." : "Cập nhật câu hỏi"}
+      {/* Nút hành động */}
+      <div className="mt-4 flex justify-between space-x-4">
+        <Button onClick={handleUpdateQuestion} disabled={loading}>
+          {loading ? "Đang tải lên ..." : "Cập nhật"}
         </Button>
+        <Link href="/dashboard/question">
+          <Button variant="destructive">Quay lại</Button>
+        </Link>
       </div>
-    </form>
+    </div>
   );
 };
 
-export default UpdateQuestionForm;
+export default UpdateQuestionPage;

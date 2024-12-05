@@ -43,13 +43,6 @@ export default function Sidebar() {
           </li>
 
           <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
-            <OpacityIcon className="h-5 w-5 mr-2 text-green-400" />
-            <Link href="/dashboard/option">
-              <span className="text-base font-medium">Option</span>
-            </Link>
-          </li>
-
-          <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
             <User2Icon className="h-5 w-5 mr-2 text-red-500" />
             <Link href="/dashboard/users">
               <span className="text-base font-medium">Users</span>
@@ -57,16 +50,16 @@ export default function Sidebar() {
           </li>
 
           <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
-            <ListIcon className="h-5 w-5 mr-2 text-orange-400" />
-            <Link href="/dashboard/option">
-              <span className="text-base font-medium">Option</span>
+            <ListCollapse className="h-5 w-5 mr-2 text-purple-400" />
+            <Link href="/dashboard/question">
+              <span className="text-base font-medium">Question</span>
             </Link>
           </li>
 
           <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
-            <ListCollapse className="h-5 w-5 mr-2 text-purple-400" />
-            <Link href="/dashboard/question">
-              <span className="text-base font-medium">Question</span>
+            <OpacityIcon className="h-5 w-5 mr-2 text-green-400" />
+            <Link href="/dashboard/answers">
+              <span className="text-base font-medium">Aswers</span>
             </Link>
           </li>
 
