@@ -1,11 +1,11 @@
 import UpdateAnswersForm from "@/components/admin/answers/updateanswers";
 
 
-const UpdateAdminAnswersPage = ({ params }: { params: { answerId: string } }) => {
-  const { answerId } = params;
+const UpdateAdminAnswersPage = ({ params }: { params: { answersId: string } }) => {
+  const { answersId } = params;
   return (
     <div>
-      <UpdateAnswersForm answerId={answerId} />
+      <UpdateAnswersForm answersId={answersId} />
     </div>
   );
 };

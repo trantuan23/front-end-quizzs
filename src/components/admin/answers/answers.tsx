@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -7,37 +8,43 @@ import { Edit, Trash } from "lucide-react";
 import Link from "next/link";
 import { deleteAnswers, fetchAnswers } from "@/app/actions/answers.action";
 import { Answers } from "@/app/types/answers.type";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const AnswersPage = () => {
   const [answers, setAnswers] = useState<Answers[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [answersPerPage] = useState<number>(5);
+  const answersPerPage = 5;
   const [optionToDelete, setOptionToDelete] = useState<{
     id: string;
     text: string;
   } | null>(null);
-  const [isDeleteModalOpen, setDeleteModalOpen] = useState<boolean>(false); // Quản lý trạng thái modal
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 
-  const loadAnswer = async () => {
+  const loadAnswers = async () => {
     setLoading(true);
     try {
       const response = await fetchAnswers();
-      const data = response.data 
-      
-      // Assuming response.data contains the answers array
-      const answersArray = Array.isArray(data) ? data : [];
-      setAnswers(answersArray);
-      
-      // If there are no answers in the current page and it's greater than 1, go back to the previous page
-      const indexOfLastAnswer = currentPage * answersPerPage;
-      const indexOfFirstAnswer = indexOfLastAnswer - answersPerPage;
-      const currentAnswers = answersArray.slice(indexOfFirstAnswer, indexOfLastAnswer);
-      
-      if (currentAnswers.length === 0 && currentPage > 1) {
-        setCurrentPage((prev) => prev - 1);
+      const data = response.data;
+
+      if (Array.isArray(data)) {
+        setAnswers(data);
+
+        // Kiểm tra nếu không có câu trả lời trong trang hiện tại
+        const indexOfLastAnswer = currentPage * answersPerPage;
+        const indexOfFirstAnswer = indexOfLastAnswer - answersPerPage;
+        const currentAnswers = data.slice(indexOfFirstAnswer, indexOfLastAnswer);
+
+        if (currentAnswers.length === 0 && currentPage > 1) {
+          setCurrentPage((prev) => prev - 1);
+        }
       }
     } catch (error: any) {
       toast({
@@ -49,16 +56,15 @@ const AnswersPage = () => {
       setLoading(false);
     }
   };
-  
 
   useEffect(() => {
-    loadAnswer();
-  }, []);
+    loadAnswers();
+  }, [currentPage]);
 
   const handleDelete = async () => {
     if (!optionToDelete) return;
-  
-    setLoading(true); // Bắt đầu trạng thái "đang xử lý"
+
+    setLoading(true);
     try {
       const result = await deleteAnswers(optionToDelete.id);
       toast({
@@ -66,7 +72,7 @@ const AnswersPage = () => {
         description: result.message,
         variant: "default",
       });
-      loadAnswer(); // Tải lại danh sách
+      await loadAnswers();
     } catch (error: any) {
       toast({
         title: "Lỗi",
@@ -75,20 +81,24 @@ const AnswersPage = () => {
       });
     } finally {
       setLoading(false);
-      setDeleteModalOpen(false); // Đóng modal
-      setOptionToDelete(null); // Reset lựa chọn
+      setDeleteModalOpen(false);
+      setOptionToDelete(null);
     }
   };
-  
 
-  const filteredOptions = answers.filter((answer) =>
-    answer.answer_text.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAnswers = useMemo(() => {
+    return answers.filter((answer) =>
+      answer.answer_text.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [answers, searchTerm]);
 
-  const totalPages = Math.ceil(filteredOptions.length / answersPerPage);
+  const totalPages = Math.ceil(filteredAnswers.length / answersPerPage);
   const indexOfLastAnswer = currentPage * answersPerPage;
   const indexOfFirstAnswer = indexOfLastAnswer - answersPerPage;
-  const currentAnswers = filteredOptions.slice(indexOfFirstAnswer, indexOfLastAnswer);
+  const currentAnswers = filteredAnswers.slice(
+    indexOfFirstAnswer,
+    indexOfLastAnswer
+  );
 
   return (
     <div className="w-full p-6 bg-gray-50 min-h-screen">
@@ -122,48 +132,59 @@ const AnswersPage = () => {
               </tr>
             </thead>
             <tbody>
-            {currentAnswers.length > 0 ? (
-    currentAnswers.map((item, index) => (
-      <tr key={item.answer_id} className="hover:bg-gray-100 transition-colors">
-        <td className="border border-gray-300 px-4 py-2 text-center">
-          {(currentPage - 1) * answersPerPage + index + 1}
-        </td>
-        <td className="border border-gray-300 px-4 py-2">{item.answer_text}</td>
-        <td className="border border-gray-300 px-4 py-2 text-center">
-          {item.is_conrrect ? "Đúng" : "Sai"}
-        </td>
-        <td className="border border-gray-300 px-4 py-2">
-          {item.question?.question_text || "Không có câu hỏi"}
-        </td>
-        <td className="border border-gray-300 px-4 py-2 flex items-center gap-2 justify-center">
-          <Link href={`/dashboard/answers/update/${item.answer_id}`}>
-            <Button className="p-2 text-blue-600 hover:bg-blue-100 transition-all" variant="ghost">
-              <Edit size={16} />
-            </Button>
-          </Link>
-          <Button
-            onClick={() => {
-              setOptionToDelete({
-                id: item.answer_id,
-                text: item.answer_text,
-              });
-              setDeleteModalOpen(true);
-            }}
-            className="p-2 text-red-600 hover:bg-red-100 transition-all"
-            variant="ghost"
-          >
-            <Trash size={16} />
-          </Button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan={5} className="text-center border border-gray-300 px-4 py-2 text-gray-500">
-        Không có kết quả.
-      </td>
-    </tr>
-  )}
+              {currentAnswers.length > 0 ? (
+                currentAnswers.map((item, index) => (
+                  <tr
+                    key={item.answer_id}
+                    className="hover:bg-gray-100 transition-colors"
+                  >
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {(currentPage - 1) * answersPerPage + index + 1}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {item.answer_text}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {item.is_correct ? "Đúng" : "Sai"}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {item.question?.question_text || "Không có câu hỏi"}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 flex items-center gap-2 justify-center">
+                      <Link href={`/dashboard/answers/update/${item.answer_id}`}>
+                        <Button
+                          className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
+                          variant="ghost"
+                        >
+                          <Edit size={16} />
+                        </Button>
+                      </Link>
+                      <Button
+                        onClick={() => {
+                          setOptionToDelete({
+                            id: item.answer_id,
+                            text: item.answer_text,
+                          });
+                          setDeleteModalOpen(true);
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-100 transition-all"
+                        variant="ghost"
+                      >
+                        <Trash size={16} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="text-center border border-gray-300 px-4 py-2 text-gray-500"
+                  >
+                    Không có kết quả.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -14,12 +14,15 @@ const AddAnswersForm = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
   const [options, setOptions] = useState<Answers[]>(
     Array(4).fill({
-      questionId: "",
+      questionId: "", 
       answer_text: "",
-      is_conrrect: false,
-      
+      is_correct: false,
+      answer_id: "", // Add missing fields
+      questionts: "", // Add missing fields
+      data: null,
     })
   );
+  
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
@@ -53,7 +56,7 @@ const AddAnswersForm = () => {
           return {
             ...option,
             [field]: value,
-            is_conrrect: field === "is_conrrect" && value ? true : option.is_conrrect,
+            is_conrrect: field === "is_correct" && value ? true : option.is_correct,
           };
         }
         // Khi không phải đáp án đang thay đổi, giữ nguyên giá trị is_conrrect
@@ -84,11 +87,12 @@ const AddAnswersForm = () => {
     const formattedAnswers: Answers[] = options.map((option, index) => ({
       questionId: selectedQuestion,
       answer_text: `${String.fromCharCode(65 + index)}. ${option.answer_text}`,
-      is_conrrect: option.is_conrrect,
-      answer_id: "", 
-      data: null, 
-      questionts: "",
+      is_correct: option.is_correct,
+      data: null,
+      questionts: "", // Fill as necessary
     }));
+    
+    
 
     const res = await addAnswers(formattedAnswers);
 
@@ -108,7 +112,7 @@ const AddAnswersForm = () => {
     router.push("/dashboard/answers");
   } catch (error) {
     console.error("Lỗi:", error);
-    alert("Đã xảy ra lỗi khi thêm đáp án.");
+    //alert("Đã xảy ra lỗi khi thêm đáp án.");
   } finally {
     setLoading(false);
   }
@@ -162,12 +166,12 @@ const AddAnswersForm = () => {
           <div className="flex items-center">
             <input
               type="checkbox"
-              checked={option.is_conrrect}
+              checked={option.is_correct}
               onChange={(e) =>
-                handleChange(index, "is_conrrect", e.target.checked)
+                handleChange(index, "is_correct", e.target.checked)
               }
               className="mr-2"
-              disabled={options.filter((opt) => opt.is_conrrect).length >= 1 && !option.is_conrrect}
+              disabled={options.filter((opt) => opt.is_correct).length >= 1 && !option.is_correct}
             />
             <span className="text-gray-700">Đáp án đúng</span>
           </div>

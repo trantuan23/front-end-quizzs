@@ -32,14 +32,14 @@
   
 
 
-  export async function updateAnswers(subjectId: string, subjectData: Omit<Answers, "subject_id">): Promise<{ status: number; data: { message: string } }> {
+  export async function updateAnswers(answerId: string, answerData: Omit<Answers, "answer_id">): Promise<{ status: number; data: { message: string } }> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subjects/${subjectId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/answers/${answerId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(subjectData),
+        body: JSON.stringify(answerData),
       });
 
 
