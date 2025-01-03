@@ -5,31 +5,40 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Trash } from "lucide-react";
 import Link from "next/link";
-
 import { deleteAnswers, fetchAnswers } from "@/app/actions/answers.action";
 import { Answers } from "@/app/types/answers.type";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const AnswersPage = () => {
   const [answers, setAnswers] = useState<Answers[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(0);
+  const [answersPerPage] = useState<number>(5);
   const [optionToDelete, setOptionToDelete] = useState<{
     id: string;
     text: string;
   } | null>(null);
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState<boolean>(false); // Quản lý trạng thái modal
 
-  const answersPerPage = 5; // Số câu trả lời hiển thị mỗi trang
-
-  // Load dữ liệu câu trả lời
   const loadAnswer = async () => {
     setLoading(true);
     try {
       const response = await fetchAnswers();
-      const answersArray = Array.isArray(response.data) ? response.data : [];
+      const data = response.data 
+      
+      // Assuming response.data contains the answers array
+      const answersArray = Array.isArray(data) ? data : [];
       setAnswers(answersArray);
-      setTotalPages(Math.ceil(answersArray.length / answersPerPage));
+      
+      // If there are no answers in the current page and it's greater than 1, go back to the previous page
+      const indexOfLastAnswer = currentPage * answersPerPage;
+      const indexOfFirstAnswer = indexOfLastAnswer - answersPerPage;
+      const currentAnswers = answersArray.slice(indexOfFirstAnswer, indexOfLastAnswer);
+      
+      if (currentAnswers.length === 0 && currentPage > 1) {
+        setCurrentPage((prev) => prev - 1);
+      }
     } catch (error: any) {
       toast({
         title: "Lỗi",
@@ -40,6 +49,7 @@ const AnswersPage = () => {
       setLoading(false);
     }
   };
+  
 
   useEffect(() => {
     loadAnswer();
@@ -47,30 +57,35 @@ const AnswersPage = () => {
 
   const handleDelete = async () => {
     if (!optionToDelete) return;
+  
+    setLoading(true); // Bắt đầu trạng thái "đang xử lý"
     try {
-      await deleteAnswers(optionToDelete.id);
+      const result = await deleteAnswers(optionToDelete.id);
       toast({
         title: "Thành công",
-        description: `Tùy chọn "${optionToDelete.text}" đã được xóa.`,
+        description: result.message,
         variant: "default",
       });
-      loadAnswer();
-      setOptionToDelete(null);
+      loadAnswer(); // Tải lại danh sách
     } catch (error: any) {
       toast({
         title: "Lỗi",
         description: error.message || "Không thể xóa tùy chọn.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
+      setDeleteModalOpen(false); // Đóng modal
+      setOptionToDelete(null); // Reset lựa chọn
     }
   };
+  
 
-  // Lọc câu trả lời theo từ khóa tìm kiếm
   const filteredOptions = answers.filter((answer) =>
     answer.answer_text.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Phân trang câu trả lời
+  const totalPages = Math.ceil(filteredOptions.length / answersPerPage);
   const indexOfLastAnswer = currentPage * answersPerPage;
   const indexOfFirstAnswer = indexOfLastAnswer - answersPerPage;
   const currentAnswers = filteredOptions.slice(indexOfFirstAnswer, indexOfLastAnswer);
@@ -81,7 +96,10 @@ const AnswersPage = () => {
         <Input
           placeholder="Tìm kiếm tùy chọn..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
           className="max-w-md"
         />
         <Link href="/dashboard/answers/add">
@@ -104,63 +122,50 @@ const AnswersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {currentAnswers.length > 0 ? (
-                currentAnswers.map((answer, index) => (
-                  <tr key={answer.answer_id} className="hover:bg-gray-100 transition-colors">
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {(currentPage - 1) * answersPerPage + index + 1}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">{answer.answer_text}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {answer.is_conrrect ? "Đúng" : "Sai"}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">{answer.question.question_text}</td>
-                    <td className="border border-gray-300 px-4 py-2 flex items-center gap-2 justify-center">
-                      <Link href={`/dashboard/option/update/${answer.answer_id}`}>
-                        <Button className="p-2 text-blue-600 hover:bg-blue-100 transition-all" variant="ghost">
-                          <Edit size={16} />
-                        </Button>
-                      </Link>
-                      <Button
-                        onClick={() =>
-                          setOptionToDelete({
-                            id: answer.answer_id,
-                            text: answer.answer_text,
-                          })
-                        }
-                        className="p-2 text-red-600 hover:bg-red-100 transition-all"
-                        variant="ghost"
-                      >
-                        <Trash size={16} />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="text-center border border-gray-300 px-4 py-2 text-gray-500">
-                    Không có kết quả.
-                  </td>
-                </tr>
-              )}
+            {currentAnswers.length > 0 ? (
+    currentAnswers.map((item, index) => (
+      <tr key={item.answer_id} className="hover:bg-gray-100 transition-colors">
+        <td className="border border-gray-300 px-4 py-2 text-center">
+          {(currentPage - 1) * answersPerPage + index + 1}
+        </td>
+        <td className="border border-gray-300 px-4 py-2">{item.answer_text}</td>
+        <td className="border border-gray-300 px-4 py-2 text-center">
+          {item.is_conrrect ? "Đúng" : "Sai"}
+        </td>
+        <td className="border border-gray-300 px-4 py-2">
+          {item.question?.question_text || "Không có câu hỏi"}
+        </td>
+        <td className="border border-gray-300 px-4 py-2 flex items-center gap-2 justify-center">
+          <Link href={`/dashboard/answers/update/${item.answer_id}`}>
+            <Button className="p-2 text-blue-600 hover:bg-blue-100 transition-all" variant="ghost">
+              <Edit size={16} />
+            </Button>
+          </Link>
+          <Button
+            onClick={() => {
+              setOptionToDelete({
+                id: item.answer_id,
+                text: item.answer_text,
+              });
+              setDeleteModalOpen(true);
+            }}
+            className="p-2 text-red-600 hover:bg-red-100 transition-all"
+            variant="ghost"
+          >
+            <Trash size={16} />
+          </Button>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan={5} className="text-center border border-gray-300 px-4 py-2 text-gray-500">
+        Không có kết quả.
+      </td>
+    </tr>
+  )}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Modal xác nhận xóa */}
-      {optionToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-md shadow-md">
-            <h3 className="text-lg font-semibold mb-2">Xác nhận xóa</h3>
-            <p>Bạn có chắc chắn muốn xóa tùy chọn "{optionToDelete.text}" không?</p>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setOptionToDelete(null)}>
-                Hủy
-              </Button>
-              <Button onClick={handleDelete}>Xóa</Button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -184,6 +189,26 @@ const AnswersPage = () => {
           Next
         </Button>
       </div>
+
+      {/* Modal Xác nhận Xóa */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+          </DialogHeader>
+          <p>
+            Bạn có chắc chắn muốn xóa tùy chọn <strong>{optionToDelete?.text}</strong> không?
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setDeleteModalOpen(false)} variant="outline">
+              Hủy
+            </Button>
+            <Button onClick={handleDelete} variant="destructive">
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

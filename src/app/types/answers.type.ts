@@ -1,8 +1,11 @@
 export interface Answers {
-  answer_id: string
-  answer_text: string
-  is_conrrect: boolean,
-  data : any,
- 
+  answer_id : string
+  questionId: string;  // Id câu hỏi
+  answer_text: string; // Nội dung đáp án
+  is_conrrect: boolean; // Đáp án đúng hay sai
+  question : any
+  data : any
   
 }
+
+

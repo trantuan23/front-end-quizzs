@@ -1,166 +1,191 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { UpdateQuizDto } from "@/app/types/quizz.type";
-import { updateQuiz } from "@/app/actions/quizz.action";
-import { fetchUsers } from "@/app/actions/user.actions";
+import { fetchQuestions } from "@/app/actions/question.action";
+import { updateAnswers } from "@/app/actions/answers.action"; 
+import { Answers } from "@/app/types/answers.type";
+import { Question } from "@/app/types/question.type";
+import { toast } from "@/hooks/use-toast";
 
-const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [time, setTime] = useState<number>(0);
-  const [userId, setUserId] = useState<string>("");
-  const [userList, setUserList] = useState<
-    { user_id: string; username: string; role: string }[]
-  >([]);
+const UpdateAnswersForm = ({ answerId }: { answerId: string }) => {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const [options, setOptions] = useState<Answers[]>([]); // Start with an empty array for answers
   const [loading, setLoading] = useState<boolean>(false);
-  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
+    // Fetch the questions for the dropdown
+    const loadQuestions = async () => {
       try {
-        const users = await fetchUsers();
+        const response = await fetchQuestions();
+        setQuestions(response.data);
 
-        // Chỉ lọc người dùng với vai trò là 'teacher'
-        const filteredUsers = users.filter(
-          (user) => user.role.toLowerCase() === "teacher"
-        );
-        setUserList(filteredUsers);
-
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/quizzes/${quizId}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch quiz data");
-
-        const quizzData = await response.json();
-        setTitle(quizzData.title);
-        setDescription(quizzData.description);
-        setTime(quizzData.time);
-        
-        setUserId(quizzData.user.user_id);
-
-        setDataLoaded(true);
+        if (response.data.length > 0 && !selectedQuestion) {
+          setSelectedQuestion(response.data[0].question_id); // Set default to first question
+        }
       } catch (error) {
-        console.error(error);
-        toast({
-          title: "Lỗi",
-          description: "Không thể lấy dữ liệu quiz.",
-          variant: "destructive",
-        });
+        console.error("Error fetching questions:", error);
       }
     };
 
-    fetchData();
-  }, [quizId]);
+    loadQuestions();
+
+    // Fetch the existing answer data for this specific answerId
+    const fetchAnswerData = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/answers/${answerId}`);
+        const answerData = await response.json();
+        if (answerData) {
+          setSelectedQuestion(answerData.questionId);
+          setOptions(answerData.answers); // Populate the form with the existing answer options
+        }
+      } catch (error) {
+        console.error("Error fetching answer data:", error);
+      }
+    };
+
+    if (answerId) {
+      fetchAnswerData();
+    }
+  }, [answerId, selectedQuestion]);
+
+  const handleChange = (
+    index: number,
+    field: keyof Answers,
+    value: string | boolean
+  ) => {
+    setOptions((prevOptions) => {
+      const updatedOptions = prevOptions.map((option, i) => {
+        if (i === index) {
+          return {
+            ...option,
+            [field]: value,
+            is_conrrect: field === "is_conrrect" && value ? true : option.is_conrrect,
+          };
+        }
+        return {
+          ...option,
+          is_conrrect: false,
+        };
+      });
+      return updatedOptions;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const updatedQuiz: UpdateQuizDto = {
-      title,
-      description,
-      time,
-      userId,
-    };
-
     try {
-      await updateQuiz(quizId, updatedQuiz);
+      if (!selectedQuestion) {
+        alert("Please select a question before updating the answers.");
+        return;
+      }
+
+      if (options.every((option) => !option.answer_text.trim())) {
+        alert("Please fill in all the answer contents.");
+        return;
+      }
+
+      const formattedAnswers: Answers[] = options.map((option, index) => ({
+        questionId: selectedQuestion,
+        answer_text: `${String.fromCharCode(65 + index)}. ${option.answer_text}`,
+        is_conrrect: option.is_conrrect,
+        answer_id: option.answer_id, // Make sure we keep the correct answer_id for update
+        data: option.data, 
+        questions: option.question, 
+      }));
+
+      await updateAnswers(answerId, formattedAnswers); 
+
       toast({
-        title: "Cập nhật thành công",
-        description: `Quiz "${title}" đã được cập nhật.`,
+        title: "Success!",
+        description: "Answers have been updated.",
         variant: "default",
       });
-      router.push("/dashboard/quizz");
+
+      router.push("/dashboard/answers");
     } catch (error) {
-      console.error(error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể cập nhật quiz.",
-        variant: "destructive",
-      });
+      console.error("Error updating answers:", error);
+      alert("An error occurred while updating the answers.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!dataLoaded) {
-    return <div>Đang tải dữ liệu...</div>;
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg mx-auto p-4">
-      <div className="mb-4">
-        <Input
-          placeholder="Tiêu đề quiz"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <Input
-          placeholder="Mô tả"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-      <div className="mb-4">
-        <Select
-          value={time > 0 ? time.toString() : ""} // Kiểm tra giá trị của time
-          onValueChange={(value) => setTime(Number(value))}
-          required
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-4xl mx-auto p-6 bg-white shadow rounded-lg"
+    >
+      <h2 className="text-2xl font-semibold text-center mb-6">
+        Update Answer for Question
+      </h2>
+
+      {/* Question Selection */}
+      <div className="mb-6">
+        <label
+          htmlFor="question-select"
+          className="block text-gray-700 font-medium mb-2"
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn thời gian" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={(15 * 60).toString()}>15 phút</SelectItem>
-            <SelectItem value={(45 * 60).toString()}>45 phút</SelectItem>
-            <SelectItem value={(60 * 60).toString()}>1 giờ</SelectItem>
-            <SelectItem value={(90 * 60).toString()}>1 giờ 30 phút</SelectItem>
-            <SelectItem value={(120 * 60).toString()}>2 giờ</SelectItem>
-            <SelectItem value={(100 * 60).toString()}>100 phút</SelectItem>
-          </SelectContent>
-        </Select>
+          Select a question:
+        </label>
+        <select
+          id="question-select"
+          value={selectedQuestion || ""}
+          onChange={(e) => setSelectedQuestion(e.target.value)}
+          className="w-full p-3 border rounded-lg bg-gray-50"
+        >
+          {questions.map((question) => (
+            <option key={question.question_id} value={question.question_id}>
+              {question.question_text}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="mb-4">
-        <Select value={userId} onValueChange={setUserId} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Giáo viên cho đề" />
-          </SelectTrigger>
-          <SelectContent>
-            {userList.length > 0 ? (
-              userList.map((item) => (
-                <SelectItem key={item.user_id} value={item.user_id}>
-                  {item.username}
-                </SelectItem>
-              ))
-            ) : (
-              <SelectItem value="" disabled>
-                Không có người dùng nào
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+      {/* Answer Fields */}
+      {options.map((option, index) => (
+        <div key={index} className="mb-6 border rounded-lg p-4 bg-gray-50">
+          <h4 className="font-semibold text-gray-700">
+            Answer {String.fromCharCode(65 + index)} - {option.answer_id}
+          </h4>
+          <Input
+            placeholder={`Enter content for Answer ${String.fromCharCode(65 + index)}`}
+            value={option.answer_text}
+            onChange={(e) => handleChange(index, "answer_text", e.target.value)}
+            required
+            className="mt-2 mb-4"
+          />
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              checked={option.is_conrrect}
+              onChange={(e) =>
+                handleChange(index, "is_conrrect", e.target.checked)
+              }
+              className="mr-2"
+              disabled={options.filter((opt) => opt.is_conrrect).length >= 1 && !option.is_conrrect}
+            />
+            <span className="text-gray-700">Correct Answer</span>
+          </div>
+        </div>
+      ))}
+
+      <div className="text-center">
+        <Button
+          type="submit"
+          disabled={loading}
+          className="bg-green-500 text-white px-6 py-3 rounded-lg"
+        >
+          {loading ? "Updating..." : "Update Answer"}
+        </Button>
       </div>
-      <Button type="submit" disabled={loading}>
-        {loading ? "Đang cập nhật..." : "Cập nhật quiz"}
-      </Button>
     </form>
   );
 };
 
-export default UpdateQuizForm;
+export default UpdateAnswersForm;
