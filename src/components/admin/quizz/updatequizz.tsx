@@ -14,15 +14,23 @@ import { useRouter } from "next/navigation";
 import { UpdateQuizDto } from "@/app/types/quizz.type";
 import { updateQuiz } from "@/app/actions/quizz.action";
 import { fetchUsers } from "@/app/actions/user.actions";
+import { User } from "@/app/types/user.type";
+import { Class } from "@/app/types/class.type";
+import { Subject } from "@/app/types/subject.type";
+import { fetchClasses } from "@/app/actions/classes/getclass";
+import { fetchSubject } from "@/app/actions/subject.action";
 
-const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
+const UpdateQuizForm = ({ quizzId }: { quizzId: string }) => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [time, setTime] = useState<number>(0);
   const [userId, setUserId] = useState<string>("");
-  const [userList, setUserList] = useState<
-    { user_id: string; username: string; role: string }[]
-  >([]);
+  const [userList, setUserList] = useState<User[]>([]);
+  const [classId, setClassId] = useState<string>("");
+  const [classList, setClassList] = useState<Class[]>([]);
+
+  const [subjectId, setSubjectId] = useState<string>("");
+  const [subjectList, setSubjectList] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
   const router = useRouter();
@@ -31,15 +39,19 @@ const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
     const fetchData = async () => {
       try {
         const users = await fetchUsers();
+        const cla = await fetchClasses();
+        const sub = await fetchSubject();
 
         // Chỉ lọc người dùng với vai trò là 'teacher'
         const filteredUsers = users.filter(
           (user) => user.role.toLowerCase() === "teacher"
         );
         setUserList(filteredUsers);
+        setClassList(cla.data);
+        setSubjectList(sub);
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/quizzes/${quizId}`
+          `${process.env.NEXT_PUBLIC_API_URL}/quizzes/${quizzId}`
         );
         if (!response.ok) throw new Error("Failed to fetch quiz data");
 
@@ -47,8 +59,10 @@ const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
         setTitle(quizzData.title);
         setDescription(quizzData.description);
         setTime(quizzData.time);
-        
+
         setUserId(quizzData.user.user_id);
+        setClassId(quizzData.class.class_id);
+        setSubjectId(quizzData.subject.subject_id);
 
         setDataLoaded(true);
       } catch (error) {
@@ -62,7 +76,7 @@ const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
     };
 
     fetchData();
-  }, [quizId]);
+  }, [quizzId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,10 +87,12 @@ const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
       description,
       time,
       userId,
+      classId,
+      subjectId,
     };
 
     try {
-      await updateQuiz(quizId, updatedQuiz);
+      await updateQuiz(quizzId, updatedQuiz);
       toast({
         title: "Cập nhật thành công",
         description: `Quiz "${title}" đã được cập nhật.`,
@@ -137,6 +153,49 @@ const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
       </div>
 
       <div className="mb-4">
+        <Select value={subjectId} onValueChange={setSubjectId} required>
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn môn học cho bài kiểm tra !" />
+          </SelectTrigger>
+          <SelectContent>
+            {subjectList.length > 0 ? (
+              subjectList.map((item) => (
+                <SelectItem key={item.subject_id} value={item.subject_id}>
+                  {item.subject_name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>
+                Không có môn học nào
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+
+
+      <div className="mb-4">
+        <Select value={classId} onValueChange={setClassId} required>
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn lớp cho bài kiểm tra !" />
+          </SelectTrigger>
+          <SelectContent>
+            {classList.length > 0 ? (
+              classList.map((item) => (
+                <SelectItem key={item.class_id} value={item.class_id}>
+                  {item.class_name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>
+                Không có lớp học nào !
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="mb-4">
         <Select value={userId} onValueChange={setUserId} required>
           <SelectTrigger>
             <SelectValue placeholder="Giáo viên cho đề" />
@@ -156,6 +215,7 @@ const UpdateQuizForm = ({ quizId }: { quizId: string }) => {
           </SelectContent>
         </Select>
       </div>
+
       <Button type="submit" disabled={loading}>
         {loading ? "Đang cập nhật..." : "Cập nhật quiz"}
       </Button>

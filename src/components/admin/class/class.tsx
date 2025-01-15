@@ -3,14 +3,14 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { ClassType } from "../../../app/types/class.type";
 import { fetchClasses } from "../../../app/actions/classes/getclass";
 import { deleteClass } from "@/app/actions/classes/deleteclass";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Trash, Copy, ArrowLeft, ArrowRight } from "lucide-react";
+import { Class } from "@/app/types/class.type";
 
 const ClassPage = () => {
-  const [classes, setClasses] = useState<ClassType[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);

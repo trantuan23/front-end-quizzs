@@ -3,11 +3,15 @@ export interface Quiz {
     title: string;
     description?: string;
     user:any,
+    class:any,
+    subject:any,
     userId:string
     quizz:any
     time:number
+    answer:any
     created_at: Date;
     updated_at: Date;
+    
   }
 
 
@@ -16,7 +20,8 @@ export interface Quiz {
     description: string; 
     time: number; 
     userId?: string; 
-    
+    classId?:string
+    subjectId?:string
   }
 
 
@@ -25,6 +30,8 @@ export interface Quiz {
     description: string; 
     time: number; 
     userId?: string; 
+    classId?:string
+    subjectId?:string
     
   }
   

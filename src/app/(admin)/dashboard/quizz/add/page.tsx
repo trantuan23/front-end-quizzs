@@ -1,10 +1,10 @@
-import AddQuizzPage from '@/components/admin/quizz/addquizz';
+import Add from '@/components/add';
 import React from 'react';
 
 const AddQuizz = () => {
     return (
         <div>
-            <AddQuizzPage/>
+            <Add/>
         </div>
     );
 }

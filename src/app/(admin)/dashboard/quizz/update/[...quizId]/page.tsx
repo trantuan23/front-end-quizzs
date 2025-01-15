@@ -1,11 +1,11 @@
 import UpdateQuizForm from "@/components/admin/quizz/updatequizz";
 
 
-const UpdateAdminQuizzPage = ({ params }: { params: { quizId: string } }) => {
-    const { quizId } = params;
+const UpdateAdminQuizzPage = async ({ params }: { params: { quizId: string } }) => {
+    const { quizId } = await params;
     return (
         <div>
-            <UpdateQuizForm quizId={quizId}/>
+            <UpdateQuizForm quizzId={quizId}/>
         </div>
     );
 }

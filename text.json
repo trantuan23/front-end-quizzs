@@ -1,0 +1,159 @@
+{
+    "quizId": [
+        "a92b5fba-bbd3-485c-a3d5-7e1d971374ef"
+    ],
+    "answers": [
+        {
+            "question_id": "ff5c1945-3e65-49f6-8e85-8e5eac285905",
+            "question_text": "xác suất thống kê",
+            "selected_answer": {
+                "answer_id": "252ad1e4-acca-4d4e-b338-ce22ae4ff218",
+                "answer_text": "C. DUCK"
+            },
+            "all_answers": [
+                {
+                    "answer_id": "252ad1e4-acca-4d4e-b338-ce22ae4ff218",
+                    "answer_text": "C. DUCK",
+                    "is_conrrect": false,
+                    "submitted_at": "2025-01-03T07:41:43.114Z",
+                    "created_at": "2025-01-03T07:41:43.114Z"
+                },
+                {
+                    "answer_id": "09971b5b-33ed-4821-ad0b-ffd8eac74372",
+                    "answer_text": "B. BIG",
+                    "is_conrrect": false,
+                    "submitted_at": "2025-01-03T07:41:43.114Z",
+                    "created_at": "2025-01-03T07:41:43.114Z"
+                },
+                {
+                    "answer_id": "22001cec-e0bf-43b8-b01a-e3973c976c9f",
+                    "answer_text": "A. CAT",
+                    "is_conrrect": true,
+                    "submitted_at": "2025-01-03T07:41:43.114Z",
+                    "created_at": "2025-01-03T07:41:43.114Z"
+                },
+                {
+                    "answer_id": "38960cfe-caaa-4e6b-917b-051c1da4523e",
+                    "answer_text": "D. DOG",
+                    "is_conrrect": false,
+                    "submitted_at": "2025-01-03T07:41:43.114Z",
+                    "created_at": "2025-01-03T07:41:43.114Z"
+                }
+            ]
+        },
+        {
+            "question_id": "98068c4f-456f-46d8-bf6a-7b229ffdb8d5",
+            "question_text": "English",
+            "selected_answer": {
+                "answer_id": "518bd49c-37d9-45ca-8c97-e343ab59f1ab",
+                "answer_text": "C. CUA"
+            },
+            "all_answers": [
+                {
+                    "answer_id": "8bc63daa-ac6e-4854-8d12-d3eb8a4c530f",
+                    "answer_text": "A. CAT",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:01.270Z",
+                    "created_at": "2025-01-04T08:53:01.270Z"
+                },
+                {
+                    "answer_id": "c94502ce-b0bb-45e6-a645-b792448858eb",
+                    "answer_text": "B. DOCG",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:01.270Z",
+                    "created_at": "2025-01-04T08:53:01.270Z"
+                },
+                {
+                    "answer_id": "518bd49c-37d9-45ca-8c97-e343ab59f1ab",
+                    "answer_text": "C. CUA",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:01.270Z",
+                    "created_at": "2025-01-04T08:53:01.270Z"
+                },
+                {
+                    "answer_id": "7b5b63ea-0bf3-44f8-9dc2-2651a39271ba",
+                    "answer_text": "D. NAM",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:01.270Z",
+                    "created_at": "2025-01-04T08:53:01.270Z"
+                }
+            ]
+        },
+        {
+            "question_id": "cb6c9b66-6136-4c24-97d6-8f9035dd73f8",
+            "question_text": "trắc nghiệm xác suất thống kê",
+            "selected_answer": {
+                "answer_id": "3eca2f76-69f2-424b-b274-3699df58bce5",
+                "answer_text": "D. ầlfaf"
+            },
+            "all_answers": [
+                {
+                    "answer_id": "467c3b66-ee4d-4e22-9378-987d9ff6f5a8",
+                    "answer_text": "A. GG",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-03T07:44:43.160Z",
+                    "created_at": "2025-01-03T07:44:43.160Z"
+                },
+                {
+                    "answer_id": "0c7ed8ae-b1b5-40df-bda1-3a07729e4a09",
+                    "answer_text": "C. jdlafa",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-03T07:44:43.160Z",
+                    "created_at": "2025-01-03T07:44:43.160Z"
+                },
+                {
+                    "answer_id": "3eca2f76-69f2-424b-b274-3699df58bce5",
+                    "answer_text": "D. ầlfaf",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-03T07:44:43.160Z",
+                    "created_at": "2025-01-03T07:44:43.160Z"
+                },
+                {
+                    "answer_id": "ff5b8d57-1431-45d7-aa01-ad1f24281cdd",
+                    "answer_text": "B. DUNG",
+                    "is_conrrect": true,
+                    "submitted_at": "2025-01-03T07:44:43.160Z",
+                    "created_at": "2025-01-03T07:44:43.160Z"
+                }
+            ]
+        },
+        {
+            "question_id": "6de08d3b-f093-4d93-aba8-90b8af219a68",
+            "question_text": "ai là người giàu nhất",
+            "selected_answer": {
+                "answer_id": "bf34db62-4625-45a6-b15a-13966af3bfad",
+                "answer_text": "B. MUSK"
+            },
+            "all_answers": [
+                {
+                    "answer_id": "4b378e56-0810-496d-97ec-146b4709a464",
+                    "answer_text": "A. BILL",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:56.910Z",
+                    "created_at": "2025-01-04T08:53:56.910Z"
+                },
+                {
+                    "answer_id": "bf34db62-4625-45a6-b15a-13966af3bfad",
+                    "answer_text": "B. MUSK",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:56.910Z",
+                    "created_at": "2025-01-04T08:53:56.910Z"
+                },
+                {
+                    "answer_id": "ee62d868-b749-458f-a3e6-22c06faa1a1b",
+                    "answer_text": "C. JACK",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:56.910Z",
+                    "created_at": "2025-01-04T08:53:56.910Z"
+                },
+                {
+                    "answer_id": "57de5e67-1ced-46a7-8bc7-41da116deef1",
+                    "answer_text": "D. ME",
+                    "is_conrrect": null,
+                    "submitted_at": "2025-01-04T08:53:56.910Z",
+                    "created_at": "2025-01-04T08:53:56.910Z"
+                }
+            ]
+        }
+    ]
+  }

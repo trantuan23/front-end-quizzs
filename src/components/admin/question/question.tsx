@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { Question } from "@/app/types/question.type";
 import { Button } from "@/components/ui/button";
@@ -18,22 +17,29 @@ const QuestionsPage = () => {
     text: string;
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const questionsPerPage = 5;
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [jsonString, setJsonString] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const loadQuestions = async () => {
     setLoading(true);
     try {
       const response = await fetchQuestions();
       const questionArray = Array.isArray(response.data) ? response.data : [];
-
       setQuestions(questionArray);
-      setTotalPages(Math.ceil(questionArray.length / questionsPerPage));
-
-      const json = JSON.stringify(questionArray, null, 2);
-      setJsonString(json);
+      // Nhóm các câu hỏi theo bài quiz
+      const groupedByQuiz = questionArray.reduce<Record<string, Question[]>>(
+        (acc, question) => {
+          const quizTitle = question.quizz.title || "Không xác định";
+          if (!acc[quizTitle]) {
+            acc[quizTitle] = [];
+          }
+          acc[quizTitle].push(question);
+          return acc;
+        },
+        {}
+      );
+      // Lưu trữ số lượng bài quiz có trong hệ thống
+      setTotalPages(Math.ceil(Object.keys(groupedByQuiz).length / 1)); // Mỗi trang hiển thị một quiz
     } catch (error: any) {
       toast({
         title: "Lỗi",
@@ -45,15 +51,33 @@ const QuestionsPage = () => {
     }
   };
 
-  const questionTypeMapping: Record<string, string> = {
-    multiple_choice: "Chọn câu hỏi",
-    drag_drop: "Kéo thả đáp án",
-    audio_guess: "Nghe",
-  };
-
   useEffect(() => {
     loadQuestions();
   }, []);
+
+  // Nhóm câu hỏi theo bài quiz
+  const groupedQuestions = questions.reduce<Record<string, Question[]>>(
+    (acc, question) => {
+      const quizTitle = question.quizz.title || "Không xác định";
+      if (!acc[quizTitle]) {
+        acc[quizTitle] = [];
+      }
+      acc[quizTitle].push(question);
+      return acc;
+    },
+    {}
+  );
+
+  const filteredQuestions = searchTerm
+    ? Object.entries(groupedQuestions).filter(([title, _]) =>
+        title.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : Object.entries(groupedQuestions);
+
+  const paginatedQuestions = filteredQuestions.slice(
+    (currentPage - 1) * 1,  // Mỗi trang chỉ hiển thị 1 quiz
+    currentPage * 1
+  );
 
   const handleDeleteQuestion = async () => {
     if (!questionToDelete) return;
@@ -80,15 +104,22 @@ const QuestionsPage = () => {
     }
   };
 
-  const filteredQuestions = questions.filter((q) =>
-    q.question_text.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const indexOfLastQuestion = currentPage * questionsPerPage;
-  const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
-  const currentQuestions = filteredQuestions.slice(
-    indexOfFirstQuestion,
-    indexOfLastQuestion
-  );
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const handleOptionChange = (questionId: string, option: string) => {
+    console.log(`Question ${questionId}: Selected option - ${option}`);
+    // Xử lý việc lưu câu trả lời của người dùng
+  };
 
   return (
     <div className="w-full">
@@ -108,101 +139,91 @@ const QuestionsPage = () => {
         <p>Loading...</p>
       ) : (
         <div>
-          <table className="min-w-full border-collapse border border-gray-300">
-            <thead>
-              <tr>
-                <th className="border border-gray-300 px-4 py-2">ID</th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Nội dung câu hỏi
-                </th>
-                <th className="border border-gray-300 px-4 py-2">Loại</th>
-                <th className="border border-gray-300 px-4 py-2">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentQuestions.length > 0 ? (
-                currentQuestions.map((question) => (
-                  <tr
-                    key={question.question_id}
-                    className="hover:bg-gray-100 transition-colors"
-                  >
-                    <td className="border border-gray-300 px-4 py-2">
-                      {question.question_id}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {question.question_text}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {questionTypeMapping[question.question_type] ||
-                        "Không xác định"}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-                      <Link
-                        href={`/dashboard/question/update/${question.question_id}`}
+          {paginatedQuestions.length > 0 ? (
+            paginatedQuestions.map(([title, questions], index) => (
+              <div key={title} className="mb-6">
+                <h2 className="text-lg mb-2">
+                  {index + 1} : Tên bài kiểm tra : {title}
+                </h2>
+                <table className="min-w-full text-center border-collapse border border-gray-300">
+                  <thead>
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-2">ID</th>
+                      <th className="border border-gray-300 px-4 py-2">
+                        Nội dung câu hỏi
+                      </th>
+                      <th className="border border-gray-300 px-4 py-2">Loại</th>
+                      <th className="border border-gray-300 px-4 py-2">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {questions.map((question, index) => (
+                      <tr
+                        key={question.question_id}
+                        className="hover:bg-gray-100 transition-colors"
                       >
-                        <Button
-                          className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
-                          variant="ghost"
-                        >
-                          <Edit size={16} />
-                        </Button>
-                      </Link>
-                      <Button
-                        onClick={() =>
-                          setQuestionToDelete({
-                            id: question.question_id,
-                            text: question.question_text,
-                          })
-                        }
-                        className="p-2 text-red-600 hover:bg-red-100 transition-all"
-                        variant="ghost"
-                      >
-                        <Trash size={16} />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="text-center border border-gray-300 px-4 py-2"
-                  >
-                    Không có câu hỏi nào.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {index + 1}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {question.question_text}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                        {question.question_type === "multiple_choice" && (
+                            <div className="mt-2">
+                              <strong>Chọn đáp án</strong>
+                            </div>
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
+                          <Link
+                            href={`/dashboard/question/update/${question.question_id}`}
+                          >
+                            <Button
+                              className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
+                              variant="ghost"
+                            >
+                              <Edit size={16} />
+                            </Button>
+                          </Link>
+                          <Button
+                            onClick={() =>
+                              setQuestionToDelete({
+                                id: question.question_id,
+                                text: question.question_text,
+                              })
+                            }
+                            className="p-2 text-red-600 hover:bg-red-100 transition-all"
+                            variant="ghost"
+                          >
+                            <Trash size={16} />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))
+          ) : (
+            <p>Không có kết quả phù hợp</p>
+          )}
 
-          <div className="flex items-center justify-center mt-4">
+          <div className="flex justify-between mt-4">
             <Button
-              onClick={() => setCurrentPage(currentPage - 1)}
+              onClick={handlePreviousPage}
               disabled={currentPage === 1}
-              className="mr-2"
+              className="text-blue-500"
             >
               <ArrowLeft size={16} />
             </Button>
-            <div className="flex justify-center">
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-                (pageNumber) => (
-                  <Button
-                    key={pageNumber}
-                    variant={
-                      pageNumber === currentPage ? "secondary" : "outline"
-                    }
-                    onClick={() => setCurrentPage(pageNumber)}
-                    className="mx-1"
-                  >
-                    {pageNumber}
-                  </Button>
-                )
-              )}
-            </div>
+            <span>
+              Trang {currentPage} / {totalPages}
+            </span>
             <Button
-              onClick={() => setCurrentPage(currentPage + 1)}
+              onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="ml-2"
+              className="text-blue-500"
             >
               <ArrowRight size={16} />
             </Button>

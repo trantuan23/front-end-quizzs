@@ -65,7 +65,7 @@ const AddQuestionForm = () => {
         description: `Câu hỏi "${response.data.question_text}" đã được thêm.`,
         variant: "default",
       });
-      router.push("/dashboard/question");
+      router.push("/dashboard/answers/add");
     } catch (error: any) {
       toast({
         title: "Lỗi",

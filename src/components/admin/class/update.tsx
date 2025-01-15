@@ -3,13 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ClassType } from "@/app/types/class.type";
+
 import { useToast } from "@/hooks/use-toast";
 import { updateClass } from "@/app/actions/classes/updateclass";
 import Link from "next/link";
+import { Class } from "@/app/types/class.type";
 
 const UpdateClassPage = ({ classId }: { classId: string }) => {
-  const [classData, setClassData] = useState<Omit<ClassType, "class_id">>({
+  const [classData, setClassData] = useState<Omit<Class, "class_id">>({
     class_name: "",
   });
   const [loading, setLoading] = useState(false);

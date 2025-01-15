@@ -53,30 +53,6 @@
     }
   }
 
-
-  export async function deleteAnswers(answersId: string): Promise<{ status: number; message: string }> {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/answers/${answersId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-  
-      const data = await response.json();
-      return {
-        status: response.status,
-        message: data?.message || "Deleted successfully",
-      };
-    } catch (error: any) {
-      console.error("Error deleting answer:", error);
-      throw new Error(error.message || "Could not delete answer");
-    }
-  }
   
 
 

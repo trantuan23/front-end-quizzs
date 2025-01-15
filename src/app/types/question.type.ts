@@ -5,7 +5,9 @@ export interface Question {
   media_url?: string;         
   data: any; 
   message:any  
-  question_id : string               
+  question_id : string ,
+  quizz:any
+                
 }
 
 export enum QuestionType {

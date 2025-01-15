@@ -1,7 +1,7 @@
 "use server";
-import { ClassType } from "../../types/class.type";
+import { Class } from "../../types/class.type";
 
-export async function fetchClasses(page: number = 1, limit: number = 10): Promise<{ data: ClassType[]; total: number }> {
+export async function fetchClasses(page: number = 1, limit: number = 10): Promise<{ data: Class[]; total: number }> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/classes?page=${page}&limit=${limit}`,
     {

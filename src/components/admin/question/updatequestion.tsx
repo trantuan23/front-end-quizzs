@@ -32,7 +32,7 @@ const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
         setQuestionData({
           question_text: data.data.question_text,
           question_type: data.data.question_type,
-          media_url: data.data.media_url || "",
+          media_url: data.data.media_url || null
 
         });
       } catch (error) {

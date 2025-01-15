@@ -63,6 +63,13 @@ export default function Sidebar() {
             </Link>
           </li>
 
+          <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
+            <OpacityIcon className="h-5 w-5 mr-2 text-green-400" />
+            <Link href="/dashboard/result">
+              <span className="text-base font-medium">Result</span>
+            </Link>
+          </li>
+
           <li className="mt-4 relative">
             <div
               className="flex items-center justify-between p-2 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors duration-300"
