@@ -7,26 +7,35 @@ import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Trash, ArrowLeft, ArrowRight } from "lucide-react";
 import { deleteQuestion, fetchQuestions } from "@/app/actions/question.action";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const QuestionsPage = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isFirstVisit, setIsFirstVisit] = useState<boolean>(false);
   const [questionToDelete, setQuestionToDelete] = useState<{
     id: string;
     text: string;
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
+  const [totalPages, setTotalPages] = useState(1);
+  const searchParams = useSearchParams();
+   const router = useRouter();
+  const queryPage = searchParams.get("page");
+  const [currentPage, setCurrentPage] = useState<number>(queryPage ? parseInt(queryPage, 10) : 1);
+
+
+  // Fetch danh sách câu hỏi từ server
   const loadQuestions = async () => {
     setLoading(true);
     try {
       const response = await fetchQuestions();
       const questionArray = Array.isArray(response.data) ? response.data : [];
       setQuestions(questionArray);
-      // Nhóm các câu hỏi theo bài quiz
+      
+      // Nhóm câu hỏi theo bài quiz
       const groupedByQuiz = questionArray.reduce<Record<string, Question[]>>(
         (acc, question) => {
           const quizTitle = question.quizz.title || "Không xác định";
@@ -38,8 +47,9 @@ const QuestionsPage = () => {
         },
         {}
       );
-      // Lưu trữ số lượng bài quiz có trong hệ thống
-      setTotalPages(Math.ceil(Object.keys(groupedByQuiz).length / 1)); // Mỗi trang hiển thị một quiz
+
+      // Tính số lượng trang dựa trên số quiz
+      setTotalPages(Math.ceil(Object.keys(groupedByQuiz).length / 1)); // Mỗi trang chỉ hiển thị 1 quiz
     } catch (error: any) {
       toast({
         title: "Lỗi",
@@ -52,10 +62,32 @@ const QuestionsPage = () => {
   };
 
   useEffect(() => {
+    // Kiểm tra nếu là lần đầu tiên vào trang
+    if (!queryPage && !isFirstVisit) {
+      setCurrentPage(1);
+      router.push('?page=1');
+      setIsFirstVisit(true); // Đánh dấu là đã truy cập
+    } else if (queryPage) {
+      setCurrentPage(parseInt(queryPage, 10));
+    }
     loadQuestions();
-  }, []);
+  }, [queryPage, router, isFirstVisit]);
 
-  // Nhóm câu hỏi theo bài quiz
+  useEffect(() => {
+    const page = searchParams.get("page");
+    if (page) {
+      setCurrentPage(Number(page));
+    }
+  }, [searchParams]);
+
+  // Khi currentPage thay đổi, cập nhật URL
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("page", String(currentPage));
+    window.history.pushState({}, "", url);
+  }, [currentPage]);
+
+  // Nhóm câu hỏi theo quiz
   const groupedQuestions = questions.reduce<Record<string, Question[]>>(
     (acc, question) => {
       const quizTitle = question.quizz.title || "Không xác định";
@@ -68,17 +100,20 @@ const QuestionsPage = () => {
     {}
   );
 
+  // Lọc câu hỏi theo tiêu đề quiz
   const filteredQuestions = searchTerm
     ? Object.entries(groupedQuestions).filter(([title, _]) =>
         title.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : Object.entries(groupedQuestions);
 
+  // Phân trang câu hỏi
   const paginatedQuestions = filteredQuestions.slice(
-    (currentPage - 1) * 1,  // Mỗi trang chỉ hiển thị 1 quiz
+    (currentPage - 1) * 1,
     currentPage * 1
   );
 
+  // Hàm xóa câu hỏi
   const handleDeleteQuestion = async () => {
     if (!questionToDelete) return;
     setDeleting(true);
@@ -104,6 +139,7 @@ const QuestionsPage = () => {
     }
   };
 
+  // Điều hướng trang
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage((prev) => prev + 1);
@@ -114,11 +150,6 @@ const QuestionsPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
     }
-  };
-
-  const handleOptionChange = (questionId: string, option: string) => {
-    console.log(`Question ${questionId}: Selected option - ${option}`);
-    // Xử lý việc lưu câu trả lời của người dùng
   };
 
   return (
@@ -136,7 +167,7 @@ const QuestionsPage = () => {
       </div>
 
       {loading ? (
-        <p>Loading...</p>
+        <p>Đang tải...</p>
       ) : (
         <div>
           {paginatedQuestions.length > 0 ? (
@@ -153,7 +184,9 @@ const QuestionsPage = () => {
                         Nội dung câu hỏi
                       </th>
                       <th className="border border-gray-300 px-4 py-2">Loại</th>
-                      <th className="border border-gray-300 px-4 py-2">Hành động</th>
+                      <th className="border border-gray-300 px-4 py-2">
+                        Hành động
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -169,16 +202,14 @@ const QuestionsPage = () => {
                           {question.question_text}
                         </td>
                         <td className="border border-gray-300 px-4 py-2">
-                        {question.question_type === "multiple_choice" && (
+                          {question.question_type === "multiple_choice" && (
                             <div className="mt-2">
                               <strong>Chọn đáp án</strong>
                             </div>
                           )}
                         </td>
                         <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-                          <Link
-                            href={`/dashboard/question/update/${question.question_id}`}
-                          >
+                          <Link href={`/dashboard/question/update/${question.question_id}`}>
                             <Button
                               className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
                               variant="ghost"

@@ -1,10 +1,17 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 import { User } from "@/app/types/user.type";
-import { deleteUser, fetchUsers } from "@/app/actions/user.actions";
+import {
+  deleteUser,
+  fetchUsers,
+  IsActive,
+  DeActivate,
+} from "@/app/actions/user.actions";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Trash, ArrowLeft, ArrowRight } from "lucide-react";
 
@@ -12,10 +19,12 @@ const UserPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
-
+  const [userToDelete, setUserToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const usersPerPage = 3; 
+  const usersPerPage = 3;
   const [totalPages, setTotalPages] = useState<number>(0);
 
   const loadUsers = async () => {
@@ -41,7 +50,6 @@ const UserPage = () => {
 
   const handleDelete = async () => {
     if (!userToDelete) return;
-
     try {
       await deleteUser(userToDelete.id);
       toast({
@@ -60,9 +68,37 @@ const UserPage = () => {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleStatusChange = async (userId: string , isActive: boolean) => {
+    try {
+      if (isActive) {
+        await IsActive(userId);
+        toast({
+          title: "Thành công",
+          description: `Tài khoản đã được kích hoạt.`,
+          variant: "default",
+        });
+      } else {
+        await DeActivate(userId);
+        toast({
+          title: "Thành công",
+          description: `Tài khoản đã bị khoá.`,
+          variant: "default",
+        });
+      }
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description: error || "Không thể cập nhật trạng thái.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const indexOfLastUser = currentPage * usersPerPage;
@@ -79,9 +115,7 @@ const UserPage = () => {
           className="max-w-md"
         />
         <Link href="/dashboard/users/add">
-          <Button className="flex items-center gap-2">
-            Thêm mới
-          </Button>
+          <Button className="flex items-center gap-2">Thêm mới</Button>
         </Link>
       </div>
 
@@ -92,29 +126,67 @@ const UserPage = () => {
           <table className="min-w-full border-collapse border border-gray-300">
             <thead>
               <tr>
+                <th className="border border-gray-300 px-4 py-2">STT</th>
                 <th className="border border-gray-300 px-4 py-2">ID</th>
-                <th className="border border-gray-300 px-4 py-2">Tên người dùng</th>
+                <th className="border border-gray-300 px-4 py-2">
+                  Tên người dùng
+                </th>
                 <th className="border border-gray-300 px-4 py-2">Email</th>
                 <th className="border border-gray-300 px-4 py-2">Vai trò</th>
+                <th className="border border-gray-300 px-4 py-2">Lớp</th>
+                <th className="border border-gray-300 px-4 py-2">Trạng thái</th>
                 <th className="border border-gray-300 px-4 py-2">Hành động</th>
               </tr>
             </thead>
             <tbody>
               {currentUsers.length > 0 ? (
-                currentUsers.map((user) => (
-                  <tr key={user.user_id} className="hover:bg-gray-100 transition-colors">
-                    <td className="border border-gray-300 px-4 py-2">{user.user_id}</td>
-                    <td className="border border-gray-300 px-4 py-2">{user.username}</td>
-                    <td className="border border-gray-300 px-4 py-2">{user.email}</td>
-                    <td className="border border-gray-300 px-4 py-2">{user.role}</td>
+                currentUsers.map((user, index) => (
+                  <tr
+                    key={user.user_id}
+                    className="hover:bg-gray-100 transition-colors"
+                  >
+                    <td className="border border-gray-300 px-4 py-2">
+                      {index + 1}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {user.user_id}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {user.username}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {user.email}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {user.role}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {user.class?.class_name}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <Switch
+                        checked={user.isActive}
+                        onCheckedChange={(checked) =>
+                          handleStatusChange(user.user_id, checked)
+                        }
+                      />
+                    </td>
                     <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-                      <Link href={`/dashboard/users/update/${user.user_id}`}>
-                        <Button className="p-2 text-blue-600 hover:bg-blue-100 transition-all" variant="ghost">
+                      <Link href={`/dashboard/auth/update/${user.user_id}`}>
+                        <Button
+                          className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
+                          variant="ghost"
+                        >
                           <Edit size={16} />
                         </Button>
                       </Link>
                       <Button
-                        onClick={() => setUserToDelete({ id: user.user_id, name: user.username })}
+                        onClick={() =>
+                          setUserToDelete({
+                            id: user.user_id,
+                            name: user.username,
+                          })
+                        }
                         className="p-2 text-red-600 hover:bg-red-100 transition-all"
                         variant="ghost"
                       >
@@ -125,7 +197,10 @@ const UserPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center border border-gray-300 px-4 py-2">
+                  <td
+                    colSpan={6}
+                    className="text-center border border-gray-300 px-4 py-2"
+                  >
                     Không có kết quả.
                   </td>
                 </tr>
@@ -142,16 +217,20 @@ const UserPage = () => {
               <ArrowLeft size={16} />
             </Button>
             <div className="flex justify-center">
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                <Button
-                  key={pageNumber}
-                  variant={pageNumber === currentPage ? "secondary" : "outline"}
-                  onClick={() => setCurrentPage(pageNumber)}
-                  className="mx-1"
-                >
-                  {pageNumber}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+                (pageNumber) => (
+                  <Button
+                    key={pageNumber}
+                    variant={
+                      pageNumber === currentPage ? "secondary" : "outline"
+                    }
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className="mx-1"
+                  >
+                    {pageNumber}
+                  </Button>
+                )
+              )}
             </div>
             <Button
               onClick={() => setCurrentPage(currentPage + 1)}

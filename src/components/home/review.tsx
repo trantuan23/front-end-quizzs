@@ -7,40 +7,41 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "../ui/button";
 
 const QuestionCard = ({ question, index, selectedAnswers }: any) => {
-    return (
-      <div className="mb-6">
-        <h2 className="text-xl font-bold">
-          Câu {index + 1}: {question.question_text}
-        </h2>
-        {question.question_type === "audio_guess" && (
-          <audio controls src={question.media_url} className="mt-2 mb-4">
-            Trình duyệt của bạn không hỗ trợ audio.
-          </audio>
-        )}
-        {question.answers.map((answer: any) => {
-          const isSelected = selectedAnswers.includes(answer.answer_id); // Kiểm tra xem câu trả lời có được chọn không
-          const isCorrect = answer.is_conrrect; // Kiểm tra xem đây có phải là câu trả lời đúng không
-          const answerStatus = isSelected
-            ? isCorrect
-              ? "true" // Người dùng chọn đúng
-              : "false" // Người dùng chọn sai
-            : isCorrect
-            ? "correct" // Đáp án đúng nhưng chưa được chọn
-            : ""; // Câu trả lời không liên quan
-  
-          return (
-            <div
-              key={answer.answer_id}
-              className={`flex items-center mb-3 ${
-                answerStatus === "true"
-                  ? "bg-green-100 border-l-4 border-green-400"
-                  : answerStatus === "false"
-                  ? "bg-red-100 border-l-4 border-red-400"
-                  : answerStatus === "correct"
-                  ? "bg-green-50 border-l-4 border-green-400"
-                  : ""
-              }`}
-            >
+  return (
+    <div className="mb-6">
+      <h2 className="text-xl font-bold">
+        Câu {index + 1}: {question.question_text}
+      </h2>
+      {question.question_type === "audio_guess" && (
+        <audio controls src={question.media_url} className="mt-2 mb-4">
+          Trình duyệt của bạn không hỗ trợ audio.
+        </audio>
+      )}
+      {question.answers.map((answer: any) => {
+        const isSelected = selectedAnswers.includes(answer.answer_id); // Kiểm tra xem câu trả lời có được chọn không
+        const isCorrect = answer.is_correct; // Kiểm tra xem đây có phải là câu trả lời đúng không
+        const answerStatus = isSelected
+          ? isCorrect
+            ? "true" // Người dùng chọn đúng
+            : "false" // Người dùng chọn sai
+          : isCorrect
+          ? "null" // Đáp án đúng nhưng chưa được chọn
+          : ""; // Câu trả lời không liên quan
+
+        return (
+          <div
+            key={answer.answer_id}
+            className={`flex flex-col mb-3 p-4 rounded ${
+              answerStatus === "true"
+                ? "bg-green-100 border-l-4 border-green-400"
+                : answerStatus === "false"
+                ? "bg-red-100 border-l-4 border-red-400"
+                : answerStatus === "null"
+                ? "bg-green-50 border-l-4 border-yellow-400"
+                : ""
+            }`}
+          >
+            <div className="flex items-center">
               <Checkbox
                 id={`answer-${answer.answer_id}`}
                 checked={isSelected} // Đánh dấu tích nếu đã chọn
@@ -58,27 +59,38 @@ const QuestionCard = ({ question, index, selectedAnswers }: any) => {
                         ? "text-red-600"
                         : answerStatus === "true"
                         ? "text-green-600"
+                        : answerStatus === "null"
+                        ? "text-yellow-300"
                         : ""
                     }`}
                   >
-                    {answerStatus === "false"
-                      ? "(Bạn đã chọn sai)"
-                      : "(Bạn đã chọn đúng)"}
+                    {answerStatus === "true"
+                      ? "(Bạn đã trả lời đúng câu này)"
+                      : "(Bạn đã trả lời sai câu này)"}
                   </span>
                 )}
-                {!isSelected && answerStatus === "correct" && (
-                  <span className="ml-2 text-sm font-semibold text-green-600">
-                    (Đáp án đúng)
+                {!isSelected && answerStatus === "null" && (
+                  <span className="ml-2 text-sm font-semibold text-green-400">
+                    (Đây là câu trả lời đúng)
                   </span>
                 )}
               </label>
             </div>
-          );
-        })}
-      </div>
-    );
-  };
-  
+
+            {/* Hiển thị lý do tại đây */}
+            {(answerStatus === "true" ||
+              answerStatus === "false" ||
+              answerStatus === "null") && (
+              <p className="mt-2 text-sm text-gray-600 italic">
+              {answer.reason}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const ReviewPage = ({ reviewId }: { reviewId: string }) => {
   const [timeLeft, setTimeLeft] = useState(5400); // Thời gian mặc định (giây)
@@ -89,6 +101,7 @@ const ReviewPage = ({ reviewId }: { reviewId: string }) => {
     title: "",
     description: "",
     time: 0,
+    score: "",
     questions: [] as any[],
   });
 
@@ -104,6 +117,7 @@ const ReviewPage = ({ reviewId }: { reviewId: string }) => {
 
       const quizData = await response.json();
       setQuiz({
+        score: quizData.score || "",
         quizz_id: reviewId,
         title: quizData.quizzes?.title || "",
         description: quizData.quizzes?.description || "",
@@ -155,26 +169,18 @@ const ReviewPage = ({ reviewId }: { reviewId: string }) => {
     );
   }, [quiz.questions, currentPage, questionsPerPage]);
 
-  const formatTime = (timeInSeconds: number) => {
-    if (timeInSeconds <= 0) return "Đã hết giờ";
-    const minutes = Math.floor((timeInSeconds % 3600) / 60);
-    const seconds = timeInSeconds % 60;
-    return `${minutes < 10 ? "0" : ""}${minutes} phút ${
-      seconds < 10 ? "0" : ""
-    }${seconds} giây`;
-  };
-
   return (
     <div className="pt-20 p-4 grid grid-cols-1 lg:grid-cols-4 gap-4">
       {/* Cột bên trái */}
       <div className="lg:col-span-3">
         <Card className="p-6">
           <CardContent>
-            <h1 className="text-3xl font-bold text-indigo-700">{quiz.title}</h1>
-            <p className="text-lg text-gray-600">{quiz.description}</p>
-            <p className="text-red-600 text-lg font-semibold">
-              Thời gian còn lại: {formatTime(timeLeft)}
-            </p>
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl t-4 font-bold text-indigo-700 text-center flex-1">
+                {quiz.title}
+              </h1>
+            </div>
+            <p className="text-lg p-6 text-gray-600">{quiz.description}</p>
             {displayedQuestions.map((question, index) => (
               <QuestionCard
                 key={question.question_id}

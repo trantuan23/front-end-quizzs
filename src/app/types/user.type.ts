@@ -17,6 +17,7 @@ export enum UserRole {
     role: UserRole;
     created_at: string; 
     class?: Class;
+    isActive:boolean
   }
   
   export interface CreateUserDto {

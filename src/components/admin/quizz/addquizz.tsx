@@ -1,5 +1,5 @@
 "use client";
-import React, {  useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,73 +21,65 @@ import { Class } from "@/app/types/class.type";
 import { fetchSubject } from "@/app/actions/subject.action";
 
 const AddQuizForm = () => {
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [time, setTime] = useState<number>(0);
-  const [userId, setUserId] = useState<string>("");
-  const [classId,setClassId] = useState<string>("")
-  const [subjectId,setSubjectId] = useState<string>("")
-  const [userList, setUserList] = useState<
-   User[]
-  >([]);
-  const [classList,setClassList] = useState<Class[]>([])
-  const [subjectList,setSubjectList] = useState<Subject[]>([])
+  const [formData, setFormData] = useState<CreateQuizzrDto>({
+    title: "",
+    description: "",
+    userId: "",
+    classId: "",
+    subjectId: "",
+    article:"",
+    time: 15 * 60,
+  });
+  const [userList, setUserList] = useState<User[]>([]);
+  const [classList, setClassList] = useState<Class[]>([]);
+  const [subjectList, setSubjectList] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+ 
   const router = useRouter();
 
-  const getUsers = async () => {
+  const fetchInitialData = async () => {
     try {
-      const data = await fetchUsers();
-      const teachers = data.filter((user) => user.role === "teacher");
-      setUserList(teachers);
+      const [users, classes, subjects] = await Promise.all([
+        fetchUsers(),
+        fetchClasses(),
+        fetchSubject(),
+      ]);
+
+      setUserList(users.filter((user) => user.role === "teacher"));
+      setClassList(classes.data);
+      setSubjectList(subjects);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to fetch initial data:", error);
     }
   };
 
-  const getClass = async() => {
-    try {
-      const clas = await fetchClasses()
-      setClassList(clas.data)
-    } catch (error) {
-      console.log(error);
-      
-    }
-  }
-
-  const getSubject = async() => {
-    try {
-      const sub = await fetchSubject()
-      setSubjectList(sub)
-    } catch (error) {
-      console.log();
-      
-    }
-  }
-
   useEffect(() => {
-    getClass()
-    getUsers();
-    getSubject()
+    fetchInitialData();
   }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: keyof CreateQuizzrDto, value: string | number) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const newQuiz: CreateQuizzrDto = { title, description, time, userId,classId,subjectId };
     try {
-      await createQuiz(newQuiz);
+      await createQuiz(formData);
       toast({
-        title: "Thêm thành công",
-        description: `Quiz "${title}" đã được thêm.`,
-        variant: "default",
+        title: "Thành công",
+        description: `Quiz "${formData.title}" đã được thêm.`,
       });
       router.push("/dashboard/question/add");
     } catch (error: any) {
-      const errorMessage = error.message || "Có lỗi không xác định xảy ra.";
       toast({
         title: "Lỗi",
-        description: errorMessage,
+        description: error.message || "Có lỗi xảy ra khi thêm quiz.",
         variant: "destructive",
       });
     } finally {
@@ -96,79 +88,123 @@ const AddQuizForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg mx-auto p-4">
-      <div className="mb-4">
-        <Input
-          placeholder="Tiêu đề quiz"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
+    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 space-y-6 bg-white shadow-md rounded">
+       <h1 className="text-2xl font-bold mb-6 text-center">Thêm bài kiểm tra</h1>
+      {/* Tiêu đề */}
+      <div>
+        <textarea
+          name="title"
+          placeholder="Tiêu đề bài kiểm tra"
+          value={formData.title}
+          onChange={handleInputChange}
+          className="w-full p-3 border border-gray-300 rounded"
+          rows={6}
+          
         />
       </div>
-      <div className="mb-4">
-        <Input
-          placeholder="Mô tả"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+
+       {/* Mô tả */}
+       <div>
+        <textarea
+          name="description"
+          placeholder="Yêu cầu đề bài"
+          value={formData.description}
+          onChange={handleInputChange}
+          className="w-full p-3 border border-gray-300 rounded"
+          rows={6}
+          
         />
       </div>
-      <div className="mb-4">
+
+      <div>
+        <textarea
+          name="article"
+          placeholder="Đề bài"
+          value={formData.article}
+          onChange={handleInputChange}
+          className="w-full p-3 border border-gray-300 rounded"
+          rows={6}
+          
+        />
+      </div>
+
+     
+
+      {/* Thời gian */}
+     {/* Thời gian */}
+     <div>
+    <Select
+      value={formData.time.toString()} // Hiển thị giá trị hiện tại
+      onValueChange={(value) => handleSelectChange("time", Number(value))}
+      required
+    >
+      <SelectTrigger>
+        <SelectValue
+          placeholder="Chọn thời gian"
+          defaultValue={(15 * 60).toString()} // Giá trị mặc định là 15 phút
+        />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={(15 * 60).toString()}>15 phút</SelectItem>
+        <SelectItem value={(45 * 60).toString()}>45 phút</SelectItem>
+        <SelectItem value={(60 * 60).toString()}>1 giờ</SelectItem>
+        <SelectItem value={(90 * 60).toString()}>1 giờ 30 phút</SelectItem>
+        <SelectItem value={(120 * 60).toString()}>2 giờ</SelectItem>
+        <SelectItem value={(100 * 60).toString()}>100 phút</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+
+
+      {/* Môn học */}
+      <div>
         <Select
-          value={time ? time.toString() : ""}
-          onValueChange={(value) => setTime(Number(value))}
+          value={formData.subjectId}
+          onValueChange={(value) => handleSelectChange("subjectId", value)}
           required
         >
           <SelectTrigger>
-            <SelectValue placeholder="Chọn thời gian" />
+            <SelectValue placeholder="Chọn môn học" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={(15 * 60).toString()}>15 phút</SelectItem>
-            <SelectItem value={(45 * 60).toString()}>45 phút</SelectItem>
-            <SelectItem value={(60 * 60).toString()}>1 giờ</SelectItem>
-            <SelectItem value={(90 * 60).toString()}>1 giờ 30 phút</SelectItem>
-            <SelectItem value={(120 * 60).toString()}>2 giờ</SelectItem>
-            <SelectItem value={(100 * 60).toString()}>100 phút</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-
-      <div className="mb-4">
-        <Select value={subjectId} onValueChange={setSubjectId} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn môn học thực hiện bài kiểm tra" />
-          </SelectTrigger>
-          <SelectContent>
-            {subjectList.map((sub) => (
-              <SelectItem key={sub.subject_id} value={sub.subject_id}>
-                {sub.subject_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    
-
-
-      <div className="mb-4">
-        <Select value={classId} onValueChange={setClassId} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Lớp thực hiện bài kiểm tra" />
-          </SelectTrigger>
-          <SelectContent>
-            {classList.map((cla) => (
-              <SelectItem key={cla.class_id} value={cla.class_id}>
-                {cla.class_name}
+            {subjectList.map((subject) => (
+              <SelectItem key={subject.subject_id} value={subject.subject_id}>
+                {subject.subject_name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      <div className="mb-4">
-        <Select value={userId} onValueChange={setUserId} required>
+      {/* Lớp học */}
+      <div>
+        <Select
+          value={formData.classId}
+          onValueChange={(value) => handleSelectChange("classId", value)}
+          required
+        >
           <SelectTrigger>
-            <SelectValue placeholder="Giáo viên cho đề" />
+            <SelectValue placeholder="Chọn lớp học" />
+          </SelectTrigger>
+          <SelectContent>
+            {classList.map((clas) => (
+              <SelectItem key={clas.class_id} value={clas.class_id}>
+                {clas.class_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Giáo viên */}
+      <div>
+        <Select
+          value={formData.userId}
+          onValueChange={(value) => handleSelectChange("userId", value)}
+          required
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn giáo viên" />
           </SelectTrigger>
           <SelectContent>
             {userList.map((user) => (
@@ -180,8 +216,9 @@ const AddQuizForm = () => {
         </Select>
       </div>
 
-      <Button type="submit" disabled={loading}>
-        {loading ? "Đang thêm..." : "Thêm quiz"}
+      {/* Nút thêm */}
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? "Đang xử lý..." : "Thêm bài kiểm tra"}
       </Button>
     </form>
   );

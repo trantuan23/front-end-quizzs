@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "@/hooks/use-toast";
 import { Trash, ArrowLeft, ArrowRight, View } from "lucide-react";
 import { Result } from "@/app/types/result.type";
-import { fetchResults } from "@/app/actions/result.action";
+import { deleteResult, fetchResults } from "@/app/actions/result.action";
 
 const ResultPage = () => {
   const [result, setResult] = useState<Result[]>([]);
@@ -14,7 +14,7 @@ const ResultPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const usersPerPage = 3;
+  const usersPerPage = 10;
   const [totalPages, setTotalPages] = useState<number>(0);
 
   const loadResult = async () => {
@@ -39,6 +39,31 @@ const ResultPage = () => {
     loadResult();
   }, []);
 
+  const handleDelete = async (resultId: string) => {
+    const isConfirmed = window.confirm(
+      "Bạn có chắc chắn muốn xóa kết quả này?"
+    );
+    if (!isConfirmed) return;
+
+    try {
+      await deleteResult(resultId);
+      toast({
+        title: "Thành công",
+        description: "Kết quả đã được xóa.",
+        variant: "default",
+      });
+
+      // Load lại danh sách kết quả sau khi xóa
+      loadResult();
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể xóa kết quả.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredUsers = result.filter((result) =>
     result.user?.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -56,9 +81,7 @@ const ResultPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
         />
-        <Link href="/dashboard/subject/add">
-          <Button className="flex items-center gap-2">Thêm mới</Button>
-        </Link>
+
       </div>
 
       {loading ? (
@@ -108,6 +131,7 @@ const ResultPage = () => {
                         </Button>
                       </Link>
                       <Button
+                        onClick={() => handleDelete(item.result_id)}
                         className="p-2 text-red-600 hover:bg-red-100 transition-all"
                         variant="ghost"
                       >

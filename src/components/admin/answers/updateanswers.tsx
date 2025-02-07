@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,14 +10,17 @@ import { updateAnswers } from "@/app/actions/answers.action";
 const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
   const [answer, setAnswer] = useState({
     answer_text: "",
-    is_conrrect: false,  // Đảm bảo mặc định là false
+    is_correct: false,
+    reason: "",
   });
   const [loading, setLoading] = useState<boolean>(false);
+  const [fetching, setFetching] = useState<boolean>(true); // Trạng thái tải dữ liệu
   const router = useRouter();
 
   useEffect(() => {
     const fetchAnswerData = async () => {
       try {
+        setFetching(true); // Bắt đầu tải dữ liệu
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/answers/${answersId}`
         );
@@ -24,9 +28,12 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
 
         if (result && result.data) {
           setAnswer({
-            answer_text: result.data.answer_text,
-            is_conrrect: result.data.is_conrrect || false,  // Đảm bảo is_conrrect mặc định là false nếu không có dữ liệu
+            answer_text: result.data.answer_text || "",
+            is_correct: result.data.is_correct || false,
+            reason: result.data.reason || "",
           });
+        } else {
+          throw new Error("No data found.");
         }
       } catch (error) {
         toast({
@@ -35,6 +42,8 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
           variant: "destructive",
         });
         console.error("Error fetching answer data:", error);
+      } finally {
+        setFetching(false); // Kết thúc tải dữ liệu
       }
     };
 
@@ -42,7 +51,7 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
   }, [answersId]);
 
   const handleChange = (
-    field: "answer_text" | "is_conrrect",
+    field: "answer_text" | "is_correct" | "reason",
     value: string | boolean
   ) => {
     setAnswer((prev) => ({
@@ -54,7 +63,7 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-  
+
     try {
       if (!answer.answer_text.trim()) {
         toast({
@@ -64,32 +73,37 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
         });
         return;
       }
-  
-      // Check if is_conrrect is properly set before submitting
-      if (answer.is_conrrect === undefined) {
+
+      if (answer.is_correct && !answer.reason.trim()) {
         toast({
           title: "Error",
-          description: "Please select whether the answer is correct or not.",
+          description: "Please provide a reason for marking this answer as correct.",
           variant: "destructive",
         });
         return;
       }
-  
+
+      const currentPage = localStorage.getItem("currentPageAnswerUpdate") || "1";
+      router.push(`/dashboard/answers?page=${currentPage}`);
+
       const updateData = {
-        answer_text: answer.answer_text,
-        is_conrrect: answer.is_conrrect, // Use is_conrrect, not is_correct
+        answer_text: answer.answer_text.trim(),
+        is_correct: answer.is_correct,
+        reason: answer.reason.trim(),
       };
-  
+
       const result = await updateAnswers(answersId, updateData);
-  
+
       if (result.status === 200) {
         toast({
           title: "Success",
-          description: result.data.message || "Answer has been updated successfully.",
+          description: result.data.message || "Answer updated successfully.",
           variant: "default",
         });
-  
-        router.push("/dashboard/answers");
+
+        const currentPage = localStorage.getItem("currentPageAnswerUpdate") || "1";
+
+        router.push(`/dashboard/answers?page=${currentPage}`);
       } else {
         throw new Error(result.data.message || "Update failed!");
       }
@@ -104,8 +118,14 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
       setLoading(false);
     }
   };
-  
-  
+
+  if (fetching) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -115,7 +135,6 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
         Update Answer
       </h2>
-
 
       {/* Answer Text */}
       <div className="mb-6">
@@ -140,14 +159,34 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
         <input
           type="checkbox"
           id="is-correct"
-          checked={answer.is_conrrect}
-          onChange={(e) => handleChange("is_conrrect", e.target.checked)}
+          checked={answer.is_correct}
+          onChange={(e) => handleChange("is_correct", e.target.checked)}
           className="w-5 h-5 text-green-600 focus:ring focus:ring-green-200 border-gray-300 rounded-md mr-2"
         />
         <label htmlFor="is-correct" className="text-gray-700">
           Mark as Correct Answer
         </label>
       </div>
+
+      {/* Reason */}
+      {answer.is_correct && (
+        <div className="mb-6">
+          <label
+            htmlFor="reason"
+            className="block text-sm font-semibold text-gray-700 mb-2"
+          >
+            Reason:
+          </label>
+          <textarea
+            id="reason"
+            placeholder="Enter reason for correctness"
+            value={answer.reason}
+            onChange={(e) => handleChange("reason", e.target.value)}
+            className="border-gray-300 focus:ring focus:ring-green-200 focus:border-green-400 w-full p-2 rounded-md"
+            rows={5}
+          />
+        </div>
+      )}
 
       {/* Submit Button */}
       <div className="text-center">

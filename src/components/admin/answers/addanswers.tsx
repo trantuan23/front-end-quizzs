@@ -1,16 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { fetchQuestions } from "@/app/actions/question.action";
 import { addAnswers } from "@/app/actions/answers.action";
-import { Answers } from "@/app/types/answers.type";
+import { Answerstype } from "@/app/types/answers.type";
 import { Question } from "@/app/types/question.type";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogFooter,
@@ -19,14 +17,15 @@ import {
 const AddAnswersForm = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
-  const [options, setOptions] = useState<Answers[]>(
+  const [options, setOptions] = useState<Answerstype[]>(
     Array(4).fill({
       questionId: "",
       answer_text: "",
-      is_conrrect: false,
+      is_correct: false,
       answer_id: "",
       questionts: "",
       data: null,
+      reason: "", // Thêm trường lý do
     })
   );
   const [loading, setLoading] = useState<boolean>(false);
@@ -57,20 +56,16 @@ const AddAnswersForm = () => {
     loadQuestions();
   }, [selectedQuestion]);
 
-  const handleChange = (
-    index: number,
-    field: keyof Answers,
-    value: boolean
-  ) => {
+  const handleChange = (index: number, field: keyof Answerstype, value: any) => {
     setOptions((prevOptions) => {
       const updatedOptions = [...prevOptions];
-  
-      if (field === "is_conrrect") {
+
+      if (field === "is_correct") {
         // Đặt tất cả đáp án khác thành false, chỉ cho phép một đáp án đúng
         updatedOptions.forEach((opt, idx) => {
           updatedOptions[idx] = {
             ...opt,
-            is_conrrect: idx === index ? value : false,
+            is_correct: idx === index ? value : false,
           };
         });
       } else {
@@ -80,12 +75,10 @@ const AddAnswersForm = () => {
           [field]: value,
         };
       }
-  
+
       return updatedOptions;
     });
   };
-  
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +103,7 @@ const AddAnswersForm = () => {
         return;
       }
 
-      if (options.filter((option) => option.is_conrrect).length === 0) {
+      if (options.filter((option) => option.is_correct).length === 0) {
         toast({
           title: "Lỗi!",
           description: "Vui lòng chọn ít nhất một đáp án đúng.",
@@ -125,8 +118,8 @@ const AddAnswersForm = () => {
         answer_text: `${String.fromCharCode(65 + index)}. ${
           option.answer_text
         }`,
-        is_conrrect: option.is_conrrect,
-        data: null,
+        is_correct: option.is_correct,
+        data: option.reason, // Gửi lý do vào cơ sở dữ liệu
       }));
 
       const res = await addAnswers(formattedAnswers);
@@ -143,6 +136,7 @@ const AddAnswersForm = () => {
           questionId: selectedQuestion,
           answer_text: "",
           is_conrrect: false,
+          reason: "", // Reset lý do
         })
       );
     } catch (error) {
@@ -152,7 +146,7 @@ const AddAnswersForm = () => {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     // Kiểm tra xem tất cả các đáp án đã được nhập và có ít nhất một đáp án đúng
     if (options.every((option) => !option.answer_text.trim())) {
       toast({
@@ -163,7 +157,7 @@ const AddAnswersForm = () => {
       return;
     }
 
-    if (options.filter((option) => option.is_conrrect).length === 0) {
+    if (options.filter((option) => option.is_correct).length === 0) {
       toast({
         title: "Lỗi!",
         description: "Vui lòng chọn ít nhất một đáp án đúng.",
@@ -172,14 +166,58 @@ const AddAnswersForm = () => {
       return;
     }
 
-    if (isNoMoreQuestions) {
-      setOpenDialog(true); // Hiển thị dialog nếu không còn câu hỏi
-    } else {
-      router.push("/dashboard/answers");
+    setLoading(true);
+
+    try {
+      // Xử lý gửi dữ liệu
+      const formattedAnswers = options.map((option, index) => ({
+        questionId: selectedQuestion,
+        answer_text: `${String.fromCharCode(65 + index)}. ${
+          option.answer_text
+        }`,
+        is_correct: option.is_correct,
+        reason: option.reason, // Gửi lý do vào cơ sở dữ liệu
+      }));
+
+      const res = await addAnswers(formattedAnswers);
+
+      toast({
+        title: "Thành công!",
+        description: res.message,
+        variant: "default",
+      });
+
+      // Reset các đáp án để chuẩn bị cho câu hỏi tiếp theo
+      setOptions(
+        Array(4).fill({
+          questionId: selectedQuestion,
+          answer_text: "",
+          is_correct: false,
+          reason: "", // Reset lý do
+        })
+      );
+
+      // Kiểm tra nếu không còn câu hỏi nào chưa có đáp án
+      if (isNoMoreQuestions) {
+        setOpenDialog(true); // Hiển thị dialog nếu không còn câu hỏi
+      } else {
+        router.push("/dashboard/question/add"); // Chuyển hướng về trang Add Questions
+      }
+    } catch (error) {
+      console.error("Lỗi khi thêm đáp án:", error);
+      toast({
+        title: "Lỗi!",
+        description: "Có lỗi xảy ra khi thêm đáp án. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleFinish = () => {
+  
+
+  const handleFinish = async () => {
     // Kiểm tra xem tất cả các đáp án đã được nhập và có ít nhất một đáp án đúng
     if (options.every((option) => !option.answer_text.trim())) {
       toast({
@@ -189,8 +227,8 @@ const AddAnswersForm = () => {
       });
       return;
     }
-
-    if (options.filter((option) => option.is_conrrect).length === 0) {
+  
+    if (options.filter((option) => option.is_correct).length === 0) {
       toast({
         title: "Lỗi!",
         description: "Vui lòng chọn ít nhất một đáp án đúng.",
@@ -198,11 +236,21 @@ const AddAnswersForm = () => {
       });
       return;
     }
-
-    // Sau khi kiểm tra, cho phép chuyển trang
-    handleSubmit(new Event("submit"));
+  
+   
+  
+    const event = new Event("submit", {
+      bubbles: true,
+      cancelable: true,
+    }) as unknown as React.FormEvent;
+  
+    // Sau khi kiểm tra, gọi handleSubmit để gửi dữ liệu
+    await handleSubmit(event);
+  
+    // Chuyển hướng tới trang answers sau khi đã submit thành công
     router.push("/dashboard/answers");
   };
+  
 
   const handleDialogCancel = () => {
     setOpenDialog(false); // Close dialog without action
@@ -227,7 +275,7 @@ const AddAnswersForm = () => {
           </label>
           <select
             id="question-select"
-            value={selectedQuestion || ""}
+            value={selectedQuestion ?? ""}
             onChange={(e) => setSelectedQuestion(e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-50"
           >
@@ -243,78 +291,70 @@ const AddAnswersForm = () => {
           </select>
         </div>
 
-        {options.map((option, index) => (
-          <div key={index} className="mb-6 border rounded-lg p-4 bg-gray-50">
-            <h4 className="font-semibold text-gray-700">
-              Đáp án {String.fromCharCode(65 + index)}
-            </h4>
-            <Input
-              placeholder={`Nhập nội dung đáp án ${String.fromCharCode(
+        <div className="grid gap-6">
+          {options.map((option, index) => (
+            <div key={index} className="flex flex-col gap-2">
+              <label className="font-medium">{`Đáp án ${String.fromCharCode(
                 65 + index
-              )}`}
-              value={option.answer_text}
-              onChange={(e) =>
-                handleChange(index, "answer_text", e.target.value)
-              }
-              required
-              className="mt-2 mb-4"
-            />
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={option.is_conrrect}
-                onChange={(e) =>
-                  handleChange(index, "is_conrrect", e.target.checked)
-                }
-                className="mr-2"
-              />
-
-              <span className="text-gray-700">Đáp án đúng</span>
+              )}`}</label>
+              <div className="flex gap-3">
+                <input
+                  type="checkbox"
+                  checked={option.is_correct}
+                  onChange={(e) =>
+                    handleChange(index, "is_correct", e.target.checked)
+                  }
+                  className="w-5 h-5"
+                />
+                <input
+                  type="text"
+                  value={option.answer_text}
+                  onChange={(e) =>
+                    handleChange(index, "answer_text", e.target.value)
+                  }
+                  placeholder={`Nội dung đáp án ${String.fromCharCode(
+                    65 + index
+                  )}`}
+                  className="w-full p-3 border rounded-lg bg-gray-50"
+                />
+              </div>
+              {option.is_correct && (
+                <textarea
+                  placeholder="Lý do đáp án đúng"
+                  value={option.reason || ""}
+                  onChange={(e) =>
+                    handleChange(index, "reason", e.target.value)
+                  }
+                  className="w-full p-3 border rounded-lg bg-gray-50"
+                />
+              )}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
-        <div className="text-center">
+        <div className="flex justify-center gap-6 mt-6">
           <Button
             type="button"
+            variant="secondary"
             onClick={handleContinue}
-            className="bg-blue-500 text-white px-6 py-3 rounded-lg mr-2"
+            disabled={loading}
           >
             Tiếp tục
           </Button>
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="bg-green-500 text-white px-6 py-3 rounded-lg"
-          >
-            {loading ? "Đang thêm..." : "Thêm đáp án"}
-          </Button>
-
-          <Button
-            type="button"
-            onClick={handleFinish}
-            className="bg-yellow-500 text-white px-6 py-3 rounded-lg ml-2"
-          >
-            Kết thúc
+          <Button type="button" onClick={handleFinish} disabled={loading}>
+            Hoàn thành
           </Button>
         </div>
       </form>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogTrigger />
+      {/* Dialog hiển thị khi không còn câu hỏi nào */}
+      <Dialog open={openDialog}>
         <DialogContent>
-          <DialogHeader>Không còn câu hỏi</DialogHeader>
-          <p className="mb-4">
-            Không còn câu hỏi nào để thêm đáp án. Bạn có muốn quay lại trang
-            thêm câu hỏi không?
-          </p>
+          <DialogHeader>
+            <h2 className="text-xl font-semibold">Không còn câu hỏi nào</h2>
+          </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={handleDialogCancel}>
-              Hủy bỏ
-            </Button>
-            <Button onClick={handleContinue}>Tiếp tục</Button>
+            <Button onClick={handleDialogCancel}>Đóng</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

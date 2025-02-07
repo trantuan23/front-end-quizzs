@@ -77,7 +77,7 @@ const UpdateUserForm = ({ userId }: { userId: string }) => {
         description: `Người dùng ${username} đã được cập nhật.`,
         variant: "default",
       });
-      router.push("/dashboard/users");
+      router.push("/dashboard/auth");
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -131,7 +131,7 @@ const UpdateUserForm = ({ userId }: { userId: string }) => {
       </div>
 
       {/* Hiển thị lớp học chỉ khi vai trò là "STUDENT" */}
-      {role === "STUDENT" && (
+      {role === "student" && (
         <div className="mb-4">
           <Select value={classId} onValueChange={(value) => setClassId(value)}>
             <SelectTrigger>

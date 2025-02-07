@@ -3,7 +3,7 @@ import HomePage from "@/components/home/homePage";
 
 export default function HomePageK() {
   return(
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center">
         <HomePage />
         <Footer/>
       </div>

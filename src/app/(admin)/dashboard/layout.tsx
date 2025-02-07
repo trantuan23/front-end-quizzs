@@ -1,22 +1,31 @@
-import Footer from "@/components/footer";
+"use client";
+
 import Header from "@/components/header";
 import Sidebar from "@/components/sidebar";
+import { useSidebar } from "@/context/SidebarContext";
 
-const DashBoardLayout = async ({
+const DashBoardLayout =({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
+  const { isSidebarVisible } = useSidebar();
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
+      {/* Header */}
       <Header />
-      <div className="flex flex-col md:flex-row flex-1">
+
+      {/* Main content */}
+      <div className={`flex flex-1 transition-all duration-300 ${isSidebarVisible ? "ml-48" : "ml-0"}`}>
+        {/* Sidebar */}
         <Sidebar />
-        <main className="flex-1 p-6 bg-white shadow-md rounded-lg transition-all duration-300">
+
+        {/* Main content area */}
+        <main className="flex-1 overflow-y-auto p-24 bg-white shadow-md rounded-lg">
           {children}
         </main>
       </div>
-      <Footer />
     </div>
   );
 };

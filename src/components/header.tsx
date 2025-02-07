@@ -1,5 +1,4 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSidebar } from "@/context/SidebarContext";
@@ -23,11 +22,12 @@ export default function Header() {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <header className="bg-gradient-to-t from-gray-900 to-gray-700 text-white py-4 shadow-md">
+    <header className="fixed top-0 left-0 w-full bg-gradient-to-t from-gray-900 to-gray-700 text-white py-4 shadow-md z-10">
+
       <div className="container mx-auto flex justify-between items-center">
         <Button
           onClick={toggleSidebar}
-          className="text-xl sm:text-2xl uppercase bg-yellow-500 hover:bg-blue-600 text-white font-bold tracking-wider transition duration-200 rounded-md p-6 "
+          className="text-xl sm:text-2xl uppercase bg-yellow-500 hover:bg-blue-600 text-white font-bold tracking-wider transition duration-200 rounded-md p-6"
         >
           Dashboard
         </Button>
@@ -35,7 +35,9 @@ export default function Header() {
         <nav className="hidden sm:flex items-center space-x-6">
           <Menubar>
             <MenubarMenu>
-              <MenubarTrigger className="text-black hover:text-white transition duration-200">File</MenubarTrigger>
+              <MenubarTrigger className="text-black hover:text-white transition duration-200">
+                File
+              </MenubarTrigger>
               <MenubarContent>
                 <MenubarItem>
                   New Tab <MenubarShortcut>⌘T</MenubarShortcut>
@@ -60,7 +62,9 @@ export default function Header() {
               </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
-              <MenubarTrigger className="text-black hover:text-white transition duration-200">Edit</MenubarTrigger>
+              <MenubarTrigger className="text-black hover:text-white transition duration-200">
+                Edit
+              </MenubarTrigger>
               <MenubarContent>
                 <MenubarItem>
                   Undo <MenubarShortcut>⌘Z</MenubarShortcut>
@@ -86,7 +90,9 @@ export default function Header() {
               </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
-              <MenubarTrigger className="text-black hover:text-white transition duration-200">View</MenubarTrigger>
+              <MenubarTrigger className="text-black hover:text-white transition duration-200">
+                View
+              </MenubarTrigger>
               <MenubarContent>
                 <MenubarCheckboxItem>
                   Always Show Bookmarks Bar
@@ -108,7 +114,9 @@ export default function Header() {
               </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
-              <MenubarTrigger className="text-black hover:text-white transition duration-200">Profiles</MenubarTrigger>
+              <MenubarTrigger className="text-black hover:text-white transition duration-200">
+                Profiles
+              </MenubarTrigger>
               <MenubarContent>
                 <MenubarRadioGroup value="benoit">
                   <MenubarRadioItem value="andy">Andy</MenubarRadioItem>

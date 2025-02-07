@@ -26,6 +26,8 @@ export const createUser = async (userData: CreateUserDto): Promise<User> => {
   }
 };
 
+
+
 export const updateUser = async (userId: string, userData: UpdateUserDto): Promise<User> => {
   try {
     const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`, userData);
@@ -40,6 +42,37 @@ export const updateUser = async (userId: string, userData: UpdateUserDto): Promi
   }
 };
 
+
+export const IsActive = async (userId: string): Promise<User> => {
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/approve/${userId}`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response && error.response.data) {
+      const { message, code } = error.response.data;
+      throw new Error(`Tài khoản đã được kích hoạt: ${message} (Code: ${code})`);
+    } else {
+      throw new Error('Có lỗi xảy ra trong quá trình cập nhật người dùng.');
+    }
+  }
+};
+
+export const DeActivate = async (userId: string): Promise<User> => {
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/users/deactivate/${userId}`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response && error.response.data) {
+      const { message, code } = error.response.data;
+      throw new Error(`Tài khoản đã được kích hoạt: ${message} (Code: ${code})`);
+    } else {
+      throw new Error('Có lỗi xảy ra trong quá trình cập nhật người dùng.');
+    }
+  }
+};
+
+
+
 export const deleteUser = async (userId: string): Promise<void> => {
   try {
     await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`);
@@ -52,3 +85,4 @@ export const deleteUser = async (userId: string): Promise<void> => {
     }
   }
 };
+

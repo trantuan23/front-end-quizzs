@@ -3,8 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {  QuestionType, updateQuestiontype } from "@/app/types/question.type";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { QuestionType, updateQuestiontype } from "@/app/types/question.type";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { updateQuestion } from "@/app/actions/question.action";
@@ -12,8 +18,8 @@ import { updateQuestion } from "@/app/actions/question.action";
 const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
   const [questionData, setQuestionData] = useState<updateQuestiontype>({
     question_text: "",
-    question_type: QuestionType ,
-    media_url: ""
+    question_type: QuestionType.multiple_choice,
+    media_url: "",
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -32,8 +38,7 @@ const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
         setQuestionData({
           question_text: data.data.question_text,
           question_type: data.data.question_type,
-          media_url: data.data.media_url || null
-
+          media_url: data.data.media_url || null,
         });
       } catch (error) {
         toast({
@@ -60,14 +65,19 @@ const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
     setLoading(true);
   
     try {
-      const res = await updateQuestion(questionId , questionData);
-      
+      const res = await updateQuestion(questionId, questionData);
+  
       toast({
         title: "Thành công!",
         description: res.message,
         variant: "default",
       });
-      router.push("/dashboard/question");
+  
+      // Lấy số trang hiện tại từ localStorage
+      const currentPage = localStorage.getItem("currentPageQuestionUpdate") || "1";
+  
+      // Điều hướng về trang hiện tại
+      router.push(`/dashboard/question?page=${currentPage}`);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -100,15 +110,22 @@ const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
         <Select
           value={questionData.question_type}
           onValueChange={(value) =>
-            setQuestionData({ ...questionData, question_type: value as QuestionType })
+            setQuestionData({
+              ...questionData,
+              question_type: value as QuestionType,
+            })
           }
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Chọn loại câu hỏi" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={QuestionType.audio_guess}>Đoán âm thanh</SelectItem>
-            <SelectItem value={QuestionType.multiple_choice}>Trắc nghiệm</SelectItem>
+            <SelectItem value={QuestionType.audio_guess}>
+              Đoán âm thanh
+            </SelectItem>
+            <SelectItem value={QuestionType.multiple_choice}>
+              Trắc nghiệm
+            </SelectItem>
             <SelectItem value={QuestionType.drag_drop}>Kéo thả</SelectItem>
           </SelectContent>
         </Select>

@@ -18,14 +18,13 @@ import { Quiz } from "@/app/types/quizz.type";
 
 const AddQuestionForm = () => {
   const [questionText, setQuestionText] = useState<string>("");
-  const [questionType, setQuestionType] = useState<QuestionType>(
-    QuestionType.audio_guess
-  );
+  const [questionType, setQuestionType] = useState<QuestionType | "">("");
   const [quizzId, setQuizId] = useState<string>("");
   const [mediaUrl, setMediaUrl] = useState<string>("");
   const [quizList, setQuizList] = useState<Quiz[]>([]);
-
   const [loading, setLoading] = useState<boolean>(false);
+  
+
   const router = useRouter();
 
   useEffect(() => {
@@ -40,19 +39,19 @@ const AddQuestionForm = () => {
     getQuizzes();
   }, []);
 
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    // Đặt loại câu hỏi mặc định nếu không chọn
+    const finalQuestionType =
+      questionType || QuestionType.multiple_choice;
+
     const createQuestionDto: Partial<Question> = {
       question_text: questionText,
-      question_type: questionType,
+      question_type: finalQuestionType,
       quizzId: quizzId,
-    
     };
-
 
     if (mediaUrl) {
       createQuestionDto.media_url = mediaUrl;
@@ -118,10 +117,9 @@ const AddQuestionForm = () => {
         <Select
           value={questionType}
           onValueChange={(value) => setQuestionType(value as QuestionType)}
-          required
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Chọn loại câu hỏi" />
+            <SelectValue placeholder="Chọn loại câu hỏi (mặc định: Trắc nghiệm)" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={QuestionType.audio_guess}>
@@ -140,12 +138,13 @@ const AddQuestionForm = () => {
         <div>
           <Input
             placeholder="URL media (nếu có)"
-            value={mediaUrl}
+            value={mediaUrl ?? ""}
             onChange={(e) => setMediaUrl(e.target.value)}
             className="w-full"
           />
         </div>
       )}
+
       {/* Nút thêm */}
       <div className="flex justify-between gap-4">
         <Button
@@ -153,7 +152,7 @@ const AddQuestionForm = () => {
           disabled={loading}
           className="w-full hover:bg-slate-400"
         >
-          {loading ? "Đang thêm câu hỏi..." : "Tiếp tục và thêm câu hỏi "}
+          {loading ? "Đang thêm câu hỏi..." : "Tiếp tục và thêm câu hỏi"}
         </Button>
       </div>
     </form>

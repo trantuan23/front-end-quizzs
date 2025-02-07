@@ -7,6 +7,7 @@ export interface Question {
   message:any  
   question_id : string ,
   quizz:any
+  page: number, limit: number
                 
 }
 

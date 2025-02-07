@@ -1,4 +1,3 @@
-"use client";
 
 import { useSidebar } from "@/context/SidebarContext";
 import { OpacityIcon } from "@radix-ui/react-icons";
@@ -9,7 +8,6 @@ import {
   HomeIcon,
   ListCheckIcon,
   ListCollapse,
-  ListIcon,
   User2Icon,
 } from "lucide-react";
 import Link from "next/link";
@@ -27,7 +25,12 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-48 hidden md:block bg-gradient-to-b from-gray-900 to-gray-700 text-white p-4 shadow-lg transition-transform duration-300">
+    <aside
+    className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-gradient-to-b from-gray-900 to-gray-700 text-white p-4 shadow-lg z-10 transition-transform duration-300 ${
+      isSidebarVisible ? "translate-x-0 w-48" : "-translate-x-full w-0"
+    }`}
+  >
+
       <nav>
         <ul>
           <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
@@ -44,8 +47,8 @@ export default function Sidebar() {
 
           <li className="flex items-center p-2 mb-3 rounded-lg hover:bg-gray-600 transition-colors duration-300 cursor-pointer">
             <User2Icon className="h-5 w-5 mr-2 text-red-500" />
-            <Link href="/dashboard/users">
-              <span className="text-base font-medium">Users</span>
+            <Link href="/dashboard/auth">
+              <span className="text-base font-medium">Người dùng</span>
             </Link>
           </li>
 
