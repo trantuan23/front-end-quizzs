@@ -156,7 +156,6 @@ const UpdateQuizForm = ({ quizzId }: { quizzId: string }) => {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={6}
-          required
         />
       </div>
 

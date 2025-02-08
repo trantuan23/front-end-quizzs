@@ -88,6 +88,11 @@ const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
       setLoading(false);
     }
   };
+
+  const handleBack = () =>{
+    const currentPage = localStorage.getItem("currentPageQuestionUpdate") || "1";
+    router.push(`/dashboard/question?page=${currentPage}`);
+  }
   
 
   return (
@@ -149,9 +154,7 @@ const UpdateQuestionPage = ({ questionId }: { questionId: string }) => {
         <Button onClick={handleUpdateQuestion} disabled={loading}>
           {loading ? "Đang tải lên ..." : "Cập nhật"}
         </Button>
-        <Link href="/dashboard/question">
-          <Button variant="destructive">Quay lại</Button>
-        </Link>
+          <Button onClick={handleBack} variant="destructive">Quay lại</Button>
       </div>
     </div>
   );
