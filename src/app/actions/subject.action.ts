@@ -21,7 +21,6 @@ export const addSubject = async (subjectData: Omit<Subject, "subject_id">) => {
         });
         return response.data;  
     } catch (error: any) {
-        console.error("Error adding subject:", error?.response?.data || error.message);
         throw new Error("Thêm môn học không thành công!");
     }
 };

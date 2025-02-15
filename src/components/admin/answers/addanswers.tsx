@@ -13,6 +13,9 @@ import {
   DialogHeader,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useDispatch } from "react-redux";
+import { clearQuizId } from "@/store/slices/quizSlice";
+
 
 const AddAnswersForm = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -32,6 +35,7 @@ const AddAnswersForm = () => {
   const [isNoMoreQuestions, setIsNoMoreQuestions] = useState<boolean>(false);
   const [openDialog, setOpenDialog] = useState<boolean>(false); // state to control dialog visibility
   const router = useRouter();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -225,6 +229,7 @@ const AddAnswersForm = () => {
         description: "Vui lòng điền nội dung cho tất cả các đáp án.",
         variant: "destructive",
       });
+      
       return;
     }
   
@@ -246,7 +251,7 @@ const AddAnswersForm = () => {
   
     // Sau khi kiểm tra, gọi handleSubmit để gửi dữ liệu
     await handleSubmit(event);
-  
+    dispatch(clearQuizId()); 
     // Chuyển hướng tới trang answers sau khi đã submit thành công
     router.push("/dashboard/answers");
   };

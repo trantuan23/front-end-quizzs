@@ -101,7 +101,7 @@ const UpdateAnswersForm = ({ answersId }: { answersId: string }) => {
           variant: "default",
         });
 
-        const currentPage = localStorage.getItem("currentPageAnswerUpdate") || "1";
+        const currentPage = localStorage.getItem("currentPageAnswersUpdate");
 
         router.push(`/dashboard/answers?page=${currentPage}`);
       } else {

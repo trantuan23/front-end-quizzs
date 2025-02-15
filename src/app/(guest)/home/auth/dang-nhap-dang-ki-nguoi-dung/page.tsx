@@ -1,4 +1,6 @@
-import AuthForm from "@/components/admin/auth/authForm";
+import AuthForm from "@/components/home/auth/GuestAuthForm";
+
+
 
 const AuthFormLoginRegisterPage = () => {
     return (

@@ -6,11 +6,17 @@ import { fetchQuizzes } from "@/app/actions/quizz.action";
 import { Quiz } from "@/app/types/quizz.type";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { useRouter } from "next/navigation";
 
 const HomePage = () => {
   const [currentTime, setCurrentTime] = useState<string>("");
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false); // State điều khiển modal
+  const user_id = useSelector((state: RootState) => state.user.userId);
+  const router = useRouter();
 
   const formatTime = (seconds: number) => {
     if (seconds <= 60) {
@@ -34,6 +40,21 @@ const HomePage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuizClick = (quizz_id: string) => {
+    if (!user_id) {
+      // Nếu người dùng chưa đăng nhập, mở modal xác nhận
+      setIsModalOpen(true);
+    } else {
+      // Nếu đã đăng nhập, cho phép tham gia bài kiểm tra
+      router.push(`home/quizzpage/test/${quizz_id}`);
+    }
+  };
+
+  const handleLoginRedirect = () => {
+    router.push("/home/auth/dang-nhap-dang-ki-nguoi-dung");
+    setIsModalOpen(false);
   };
 
   useEffect(() => {
@@ -81,11 +102,13 @@ const HomePage = () => {
                 <p className="text-sm text-gray-500 mt-4">
                   👤 <span className="font-medium text-gray-700">Người ra đề:</span> {quiz.user.username}
                 </p>
-                <Link href={`home/quizzpage/test/${quiz.quizz_id}`}>
-                  <Button className="mt-6 w-full bg-blue-500 hover:bg-blue-600 py-2 rounded-md font-medium text-white transition">
-                    🎯 Tham gia bài kiểm tra
-                  </Button>
-                </Link>
+              
+                <Button
+                  onClick={() => handleQuizClick(quiz.quizz_id)}
+                  className="mt-6 w-full bg-blue-500 hover:bg-blue-600 py-2 rounded-md font-medium text-white transition"
+                >
+                  🎯 Tham gia bài kiểm tra
+                </Button>
               </div>
             ))}
           </div>
@@ -102,6 +125,30 @@ const HomePage = () => {
           </Link>
         </p>
       </div>
+
+      {/* Modal xác nhận */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
+            <h3 className="text-xl font-semibold mb-4">Bạn chưa đăng nhập</h3>
+            <p className="text-md mb-4">Bạn cần đăng nhập để tham gia bài kiểm tra. Bạn có muốn đăng nhập ngay không?</p>
+            <div className="flex justify-end space-x-4">
+              <Button
+                onClick={() => setIsModalOpen(false)}
+                className="bg-gray-500 hover:bg-gray-600 text-white"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleLoginRedirect}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                Đăng nhập
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

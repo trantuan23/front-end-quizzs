@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -11,41 +10,44 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { fetchUsers } from "@/app/actions/user.actions";
 import { createQuiz } from "@/app/actions/quizz.action";
 import { CreateQuizzrDto } from "@/app/types/quizz.type";
-import { User } from "@/app/types/user.type";
 import { Subject } from "@/app/types/subject.type";
 import { fetchClasses } from "@/app/actions/classes/getclass";
 import { Class } from "@/app/types/class.type";
 import { fetchSubject } from "@/app/actions/subject.action";
+import { useDispatch, useSelector } from "react-redux";
+import { setQuizId } from "@/store/slices/quizSlice";
+import { RootState } from "@/store/store"; // Import kiểu dữ liệu của Redux store
 
 const AddQuizForm = () => {
+  const dispatch = useDispatch();
+  const router = useRouter();
+
+  // 🟢 Lấy thông tin user hiện tại từ Redux
+  const currentUser = useSelector((state: RootState) => state.user.userId);
+  const teacherName = useSelector((state: RootState) => state.user.username);
+
   const [formData, setFormData] = useState<CreateQuizzrDto>({
     title: "",
     description: "",
-    userId: "",
+    userId: currentUser || "", // 🟢 Gán trực tiếp userId của người dùng hiện tại
     classId: "",
     subjectId: "",
-    article:"",
+    article: "",
     time: 15 * 60,
   });
-  const [userList, setUserList] = useState<User[]>([]);
+
   const [classList, setClassList] = useState<Class[]>([]);
   const [subjectList, setSubjectList] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
- 
-  const router = useRouter();
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = async (): Promise<void> => {
     try {
-      const [users, classes, subjects] = await Promise.all([
-        fetchUsers(),
+      const [classes, subjects] = await Promise.all([
         fetchClasses(),
         fetchSubject(),
       ]);
-
-      setUserList(users.filter((user) => user.role === "teacher"));
       setClassList(classes.data);
       setSubjectList(subjects);
     } catch (error) {
@@ -57,12 +59,17 @@ const AddQuizForm = () => {
     fetchInitialData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name: keyof CreateQuizzrDto, value: string | number) => {
+  const handleSelectChange = (
+    name: keyof CreateQuizzrDto,
+    value: string | number
+  ) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -70,11 +77,17 @@ const AddQuizForm = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await createQuiz(formData);
+      const response = await createQuiz({
+        ...formData,
+      });
+
+      dispatch(setQuizId(response.data.quizz_id));
+
       toast({
         title: "Thành công",
         description: `Quiz "${formData.title}" đã được thêm.`,
       });
+
       router.push("/dashboard/question/add");
     } catch (error: any) {
       toast({
@@ -88,9 +101,21 @@ const AddQuizForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 space-y-6 bg-white shadow-md rounded">
-       <h1 className="text-2xl font-bold mb-6 text-center">Thêm bài kiểm tra</h1>
-      {/* Tiêu đề */}
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-2xl mx-auto p-6 space-y-6 bg-white shadow-md rounded"
+    >
+      <h1 className="text-2xl font-bold mb-6 text-center">Thêm bài kiểm tra</h1>
+
+      <div>
+        <p className="text-lg">
+          Giáo viên cho đề :{" "}
+          <span className="text-blue-800">
+            {teacherName || "Không xác định"}
+          </span>
+        </p>
+      </div>
+
       <div>
         <textarea
           name="title"
@@ -99,12 +124,10 @@ const AddQuizForm = () => {
           onChange={handleInputChange}
           className="w-full p-3 border border-gray-300 rounded"
           rows={6}
-          
         />
       </div>
 
-       {/* Mô tả */}
-       <div>
+      <div>
         <textarea
           name="description"
           placeholder="Yêu cầu đề bài"
@@ -112,7 +135,6 @@ const AddQuizForm = () => {
           onChange={handleInputChange}
           className="w-full p-3 border border-gray-300 rounded"
           rows={6}
-          
         />
       </div>
 
@@ -124,39 +146,29 @@ const AddQuizForm = () => {
           onChange={handleInputChange}
           className="w-full p-3 border border-gray-300 rounded"
           rows={6}
-          
         />
       </div>
 
-     
+      <div>
+        <Select
+          value={formData.time.toString()}
+          onValueChange={(value) => handleSelectChange("time", Number(value))}
+          required
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn thời gian" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={(15 * 60).toString()}>15 phút</SelectItem>
+            <SelectItem value={(45 * 60).toString()}>45 phút</SelectItem>
+            <SelectItem value={(60 * 60).toString()}>1 giờ</SelectItem>
+            <SelectItem value={(90 * 60).toString()}>1 giờ 30 phút</SelectItem>
+            <SelectItem value={(120 * 60).toString()}>2 giờ</SelectItem>
+            <SelectItem value={(100 * 60).toString()}>100 phút</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      {/* Thời gian */}
-     {/* Thời gian */}
-     <div>
-    <Select
-      value={formData.time.toString()} // Hiển thị giá trị hiện tại
-      onValueChange={(value) => handleSelectChange("time", Number(value))}
-      required
-    >
-      <SelectTrigger>
-        <SelectValue
-          placeholder="Chọn thời gian"
-          defaultValue={(15 * 60).toString()} // Giá trị mặc định là 15 phút
-        />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={(15 * 60).toString()}>15 phút</SelectItem>
-        <SelectItem value={(45 * 60).toString()}>45 phút</SelectItem>
-        <SelectItem value={(60 * 60).toString()}>1 giờ</SelectItem>
-        <SelectItem value={(90 * 60).toString()}>1 giờ 30 phút</SelectItem>
-        <SelectItem value={(120 * 60).toString()}>2 giờ</SelectItem>
-        <SelectItem value={(100 * 60).toString()}>100 phút</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-
-
-      {/* Môn học */}
       <div>
         <Select
           value={formData.subjectId}
@@ -176,7 +188,6 @@ const AddQuizForm = () => {
         </Select>
       </div>
 
-      {/* Lớp học */}
       <div>
         <Select
           value={formData.classId}
@@ -196,27 +207,6 @@ const AddQuizForm = () => {
         </Select>
       </div>
 
-      {/* Giáo viên */}
-      <div>
-        <Select
-          value={formData.userId}
-          onValueChange={(value) => handleSelectChange("userId", value)}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn giáo viên" />
-          </SelectTrigger>
-          <SelectContent>
-            {userList.map((user) => (
-              <SelectItem key={user.user_id} value={user.user_id}>
-                {user.username}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Nút thêm */}
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? "Đang xử lý..." : "Thêm bài kiểm tra"}
       </Button>

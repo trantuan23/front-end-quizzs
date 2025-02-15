@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDispatch } from "react-redux";
+import { setUser } from "@/store/slices/userSlice";
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true); 
@@ -30,6 +32,8 @@ const AuthForm = () => {
   const [classList, setClassList] = useState<
     { class_id: string; class_name: string }[]
   >([]);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -54,13 +58,12 @@ const AuthForm = () => {
     try {
       if (isLogin) {
         // Xử lý đăng nhập
-        const { access_token,role,user_id, user_name } = await loginUser({
+        const { access_token,user_id, user_name, role } = await loginUser({
           email: formData.email,
           password: formData.password,
         });
-        localStorage.setItem("access_token", access_token);
-        localStorage.setItem("user_id", user_id);
-        localStorage.setItem("username", user_name);
+        localStorage.setItem("access_token",access_token)
+        dispatch(setUser({ userId: user_id, username: user_name , role: role }));
         toast({
           title: "Đăng nhập thành công",
           description: "Chào mừng bạn trở lại!",

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,42 +16,48 @@ import { fetchQuizzes } from "@/app/actions/quizz.action";
 import { createQuestion } from "@/app/actions/question.action";
 import { Question, QuestionType } from "@/app/types/question.type";
 import { Quiz } from "@/app/types/quizz.type";
+import { RootState } from "@/store/store";
 
 const AddQuestionForm = () => {
   const [questionText, setQuestionText] = useState<string>("");
   const [questionType, setQuestionType] = useState<QuestionType | "">("");
-  const [quizzId, setQuizId] = useState<string>("");
   const [mediaUrl, setMediaUrl] = useState<string>("");
   const [quizList, setQuizList] = useState<Quiz[]>([]);
+  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  
 
   const router = useRouter();
+  const quizzId = useSelector((state: RootState) => state.quiz.quizId);
 
   useEffect(() => {
     const getQuizzes = async () => {
       try {
         const data = await fetchQuizzes();
         setQuizList(data);
+        // Nếu không có quizzId từ Redux, chọn quiz đầu tiên trong danh sách
+        if (!quizzId && data.length > 0) {
+          setSelectedQuizId(data[0].quizz_id);
+        }
       } catch (error) {
         console.error(error);
       }
     };
     getQuizzes();
-  }, []);
+  }, [quizzId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Đặt loại câu hỏi mặc định nếu không chọn
     const finalQuestionType =
       questionType || QuestionType.multiple_choice;
+
+    const finalQuizId = quizzId || selectedQuizId; // Sử dụng quizzId từ Redux hoặc từ select
 
     const createQuestionDto: Partial<Question> = {
       question_text: questionText,
       question_type: finalQuestionType,
-      quizzId: quizzId,
+      quizzId: finalQuizId || '', 
     };
 
     if (mediaUrl) {
@@ -85,11 +92,14 @@ const AddQuestionForm = () => {
         Thêm Câu Hỏi cho bài kiểm tra
       </h1>
 
-      {/* Chọn Quiz */}
+      {/* Hiển thị quiz nếu có quizzId từ Redux hoặc chọn quiz từ select */}
       <div>
-        <Select value={quizzId} onValueChange={setQuizId} required>
+        <Select
+          value={quizzId || selectedQuizId || ""}
+          onValueChange={(value) => setSelectedQuizId(value || null)}
+        >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Chọn quiz cho câu hỏi" />
+            <SelectValue placeholder="Chọn bài kiểm tra" />
           </SelectTrigger>
           <SelectContent>
             {quizList.map((quiz) => (

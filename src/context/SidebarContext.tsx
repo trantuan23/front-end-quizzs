@@ -1,9 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 
 // Tạo Context
-const SidebarContext = createContext({
+const SidebarContext = createContext<{
+  isSidebarVisible: boolean;
+  toggleSidebar: () => void;
+}>({
   isSidebarVisible: true,
   toggleSidebar: () => {},
 });
@@ -18,9 +21,9 @@ interface SidebarProviderProps {
 export function SidebarProvider({ children }: SidebarProviderProps) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     setIsSidebarVisible((prev) => !prev);
-  };
+  }, []);
 
   return (
     <SidebarContext.Provider value={{ isSidebarVisible, toggleSidebar }}>

@@ -77,7 +77,7 @@ const UpdateUserForm = ({ userId }: { userId: string }) => {
         description: `Người dùng ${username} đã được cập nhật.`,
         variant: "default",
       });
-      router.push("/dashboard/auth");
+      router.push("/dashboard/user");
     } catch (error) {
       toast({
         title: "Lỗi",

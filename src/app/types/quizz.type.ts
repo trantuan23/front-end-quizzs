@@ -24,7 +24,8 @@ export interface Quiz {
     userId?: string; 
     classId?:string
     subjectId?:string
-    article:string
+    article:string,
+    
   }
 
 

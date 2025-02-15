@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -7,70 +7,68 @@ import { toast } from "@/hooks/use-toast";
 import { Trash, ArrowLeft, ArrowRight, View } from "lucide-react";
 import { Result } from "@/app/types/result.type";
 import { deleteResult, fetchResults } from "@/app/actions/result.action";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
+
+const usersPerPage = 5;
 
 const ResultPage = () => {
-  const [result, setResult] = useState<Result[]>([]);
+  const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const usersPerPage = 10;
+  const debouncedSearchTerm = useDebounce(searchTerm, 300); // Debounce search
   const [totalPages, setTotalPages] = useState<number>(0);
 
-  const loadResult = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchResults();
-
-      setResult(data);
-      setTotalPages(Math.ceil(data.length / usersPerPage));
-    } catch (error: any) {
-      toast({
-        title: "Lỗi",
-        description: error || "Không thể lấy danh sách kết quả.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const queryPage = searchParams.get("page");
+  const [currentPage, setCurrentPage] = useState<number>(queryPage ? parseInt(queryPage, 10) : 1);
 
   useEffect(() => {
-    loadResult();
+    const loadResults = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchResults();
+        setResults(data);
+        setTotalPages(Math.ceil(data.length / usersPerPage));
+      } catch (error: any) {
+        toast({
+          title: "Lỗi",
+          description: error || "Không thể lấy danh sách kết quả.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadResults();
   }, []);
 
-  const handleDelete = async (resultId: string) => {
-    const isConfirmed = window.confirm(
-      "Bạn có chắc chắn muốn xóa kết quả này?"
+  // Tính toán danh sách kết quả sau khi lọc (useMemo giúp tối ưu hiệu suất)
+  const filteredResults = useMemo(() => {
+    return results.filter((result) =>
+      result.user?.username?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     );
-    if (!isConfirmed) return;
+  }, [results, debouncedSearchTerm]);
 
-    try {
-      await deleteResult(resultId);
-      toast({
-        title: "Thành công",
-        description: "Kết quả đã được xóa.",
-        variant: "default",
-      });
-
-      // Load lại danh sách kết quả sau khi xóa
-      loadResult();
-    } catch (error: any) {
-      toast({
-        title: "Lỗi",
-        description: error.message || "Không thể xóa kết quả.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const filteredUsers = result.filter((result) =>
-    result.user?.username?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  // Xử lý phân trang
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const currentResults = useMemo(() => {
+    return filteredResults.slice(indexOfFirstUser, indexOfLastUser);
+  }, [filteredResults, currentPage]);
+
+  const handleDelete = async (resultId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa kết quả này?")) return;
+    try {
+      await deleteResult(resultId);
+      toast({ title: "Thành công", description: "Kết quả đã được xóa.", variant: "default" });
+      setResults((prev) => prev.filter((item) => item.result_id !== resultId)); // Cập nhật state tránh gọi API lại
+    } catch (error: any) {
+      toast({ title: "Lỗi", description: error.message || "Không thể xóa kết quả.", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="w-full">
@@ -81,7 +79,6 @@ const ResultPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
         />
-
       </div>
 
       {loading ? (
@@ -93,40 +90,24 @@ const ResultPage = () => {
               <tr>
                 <th className="border border-gray-300 px-4 py-2">STT</th>
                 <th className="border border-gray-300 px-4 py-2">Điểm</th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Bài kiểm tra
-                </th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Người làm bài
-                </th>
+                <th className="border border-gray-300 px-4 py-2">Bài kiểm tra</th>
+                <th className="border border-gray-300 px-4 py-2">Người làm bài</th>
                 <th className="border border-gray-300 px-4 py-2">Hành động</th>
               </tr>
             </thead>
             <tbody>
-              {currentUsers.length > 0 ? (
-                currentUsers.map((item, index) => (
-                  <tr
-                    key={item.result_id}
-                    className="hover:bg-gray-100 transition-colors"
-                  >
+              {currentResults.length > 0 ? (
+                currentResults.map((item, index) => (
+                  <tr key={item.result_id} className="hover:bg-gray-100 transition-colors">
                     <td className="border border-gray-300 px-4 py-2">
-                      {index + 1}
+                      {(currentPage - 1) * usersPerPage + index + 1}
                     </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {item.score}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {item.quizzes.title}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {item.user.username}
-                    </td>
+                    <td className="border border-gray-300 px-4 py-2">{item.score}</td>
+                    <td className="border border-gray-300 px-4 py-2">{item.quizzes.title}</td>
+                    <td className="border border-gray-300 px-4 py-2">{item.user.username}</td>
                     <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
                       <Link href={`/home/review/${item.result_id}`}>
-                        <Button
-                          className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
-                          variant="ghost"
-                        >
+                        <Button className="p-2 text-blue-600 hover:bg-blue-100 transition-all" variant="ghost">
                           <View size={16} />
                         </Button>
                       </Link>
@@ -142,10 +123,7 @@ const ResultPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="text-center border border-gray-300 px-4 py-2"
-                  >
+                  <td colSpan={5} className="text-center border border-gray-300 px-4 py-2">
                     Không có kết quả.
                   </td>
                 </tr>
@@ -154,31 +132,23 @@ const ResultPage = () => {
           </table>
 
           <div className="flex items-center justify-center mt-4">
-            <Button
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="mr-2"
-            >
+            <Button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="mr-2">
               <ArrowLeft size={16} />
             </Button>
             <div className="flex justify-center">
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-                (pageNumber) => (
-                  <Button
-                    key={pageNumber}
-                    variant={
-                      pageNumber === currentPage ? "secondary" : "outline"
-                    }
-                    onClick={() => setCurrentPage(pageNumber)}
-                    className="mx-1"
-                  >
-                    {pageNumber}
-                  </Button>
-                )
-              )}
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  variant={pageNumber === currentPage ? "secondary" : "outline"}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className="mx-1"
+                >
+                  {pageNumber}
+                </Button>
+              ))}
             </div>
             <Button
-              onClick={() => setCurrentPage(currentPage + 1)}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
               className="ml-2"
             >

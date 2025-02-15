@@ -20,7 +20,7 @@ const AddUserForm = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [role, setRole] = useState<UserRole>(UserRole.STUDENT);
-  const [classId, setClassId] = useState<string>("");
+  const [classId, setClassId] = useState<string | null>(null); // Thay đổi giá trị khởi tạo là null
   const [classList, setClasses] = useState<
     { class_id: string; class_name: string }[]
   >([]);
@@ -43,7 +43,7 @@ const AddUserForm = () => {
     e.preventDefault();
     setLoading(true);
   
-    const newUser: CreateUserDto = { username, email, password, role, classId };
+    const newUser: CreateUserDto = { username, email, password, role,classId };
   
     try {
        await createUser(newUser);
@@ -52,7 +52,7 @@ const AddUserForm = () => {
         description: `Người dùng ${username} đã được thêm.`,
         variant: "default",
       });
-      router.push("/dashboard/users");
+      router.push("/dashboard/user");
     } catch (error: any) {
       toast({
         title: "Lỗi",
@@ -113,7 +113,7 @@ const AddUserForm = () => {
       {/* Chỉ hiển thị mục chọn lớp nếu role là STUDENT */}
       {role === UserRole.STUDENT && (
         <div className="mb-4">
-          <Select value={classId} onValueChange={setClassId}>
+          <Select value={classId ?? "none"} onValueChange={(value) => setClassId(value === "none" ? null : value)}>
             <SelectTrigger>
               <SelectValue placeholder="Chọn lớp học" />
             </SelectTrigger>

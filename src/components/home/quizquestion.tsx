@@ -8,12 +8,15 @@ import { Button } from "../ui/button";
 import Modal from "../ui/Modal.tsx";
 import { Answerstype } from "@/app/types/answers.type";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 const QuizQuestion = ({ quizId }: { quizId: string }) => {
   const router = useRouter();
   const searchParams = useSearchParams(); // Sử dụng useSearchParams
   const [timeLeft, setTimeLeft] = useState(5400); // Thời gian mặc định (giây)
   const [currentPage, setCurrentPage] = useState(0);
+  const user_id = useSelector((state: RootState) => state.user.userId);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<string, string>
   >({});
@@ -147,7 +150,7 @@ const QuizQuestion = ({ quizId }: { quizId: string }) => {
 
     const quizMetaData = {
       quizId: quiz.quizz_id, // Lấy quizId từ quizzData hoặc trực tiếp
-      userId: "fd6c4fce-f968-4d82-9c29-2798e80df6f4", // userId
+      userId: user_id,
       subjectId: quiz.subject,
     };
 
@@ -201,6 +204,8 @@ const QuizQuestion = ({ quizId }: { quizId: string }) => {
         );
         throw new Error(`Failed to submit quiz: ${errorMessage}`);
       }
+
+      router.push("/")
 
       toast({
         title: "Nộp bài thành công",

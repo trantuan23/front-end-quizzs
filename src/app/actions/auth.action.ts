@@ -45,6 +45,20 @@ export const verifyOtp = async (email: string, otpCode: string) => {
   }
 };
 
+export const Checktoken = async (refresh_token: string) => {
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-token`, { refresh_token });
+    return response.data;
+  } catch (error: any) {
+    // Kiểm tra lỗi nếu là lỗi 401 (Unauthorized)
+    if (error.response && error.response.status === 401) {
+      // Xóa token và chuyển hướng về trang login
+      localStorage.removeItem("access_token");
+      window.location.href = "/admin/auth/dang-nhap-trang-quan-tri"; 
+    }
+  }
+};
+
 export const resetPassword = async (email: string, otpCode: string, newPassword: string) => {
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`, {
@@ -57,3 +71,10 @@ export const resetPassword = async (email: string, otpCode: string, newPassword:
     throw new Error(error.response?.data?.message || "Có lỗi xảy ra.");
   }
 };
+
+
+export const LogoutAuth = async (userId: string) => {
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, { userId });
+  return response.data;
+};
+

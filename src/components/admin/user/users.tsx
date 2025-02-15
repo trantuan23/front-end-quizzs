@@ -14,6 +14,9 @@ import {
 } from "@/app/actions/user.actions";
 import { toast } from "@/hooks/use-toast";
 import { Edit, Trash, ArrowLeft, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 const UserPage = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -26,19 +29,17 @@ const UserPage = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const usersPerPage = 3;
   const [totalPages, setTotalPages] = useState<number>(0);
+  const role = useSelector((state: RootState) => state.user?.role);
+  const router = useRouter();
 
   const loadUsers = async () => {
     setLoading(true);
     try {
       const data = await fetchUsers();
-      setUsers(data);
+      setUsers(data); // Set lại state users
       setTotalPages(Math.ceil(data.length / usersPerPage));
     } catch (error: any) {
-      toast({
-        title: "Lỗi",
-        description: error || "Không thể lấy danh sách người dùng.",
-        variant: "destructive",
-      });
+      router.push("/dashboard/no-access");
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,16 @@ const UserPage = () => {
     }
   };
 
-  const handleStatusChange = async (userId: string , isActive: boolean) => {
+  const handleStatusChange = async (userId: string, isActive: boolean) => {
+    if (role !== "admin") {
+      toast({
+        title: "Lỗi",
+        description: "Bạn không có quyền thay đổi trạng thái người dùng.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       if (isActive) {
         await IsActive(userId);
@@ -114,7 +124,7 @@ const UserPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
         />
-        <Link href="/dashboard/users/add">
+        <Link href="/dashboard/user/add">
           <Button className="flex items-center gap-2">Thêm mới</Button>
         </Link>
       </div>
@@ -169,11 +179,13 @@ const UserPage = () => {
                         onCheckedChange={(checked) =>
                           handleStatusChange(user.user_id, checked)
                         }
+                        disabled={role !== "admin"}
                       />
                     </td>
                     <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-                      <Link href={`/dashboard/auth/update/${user.user_id}`}>
+                      <Link href={`/dashboard/user/update/${user.user_id}`}>
                         <Button
+                          disabled={role !== "admin"}
                           className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
                           variant="ghost"
                         >
@@ -181,6 +193,7 @@ const UserPage = () => {
                         </Button>
                       </Link>
                       <Button
+                      disabled={role !== "admin"}
                         onClick={() =>
                           setUserToDelete({
                             id: user.user_id,

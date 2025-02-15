@@ -1,36 +1,33 @@
 import { ReactNode } from "react";
-import "./globals.css"; 
+import "./globals.css";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { Toaster } from "@/components/ui/toaster";
-
-interface LayoutProps {
-  children: ReactNode;
-}
+import { ReduxProvider } from "@/store/ReduxProvider";
 
 export const metadata = {
   title: "Quiz Online",
   description: "Next.js ShadCN UI Dashboard",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+};
+
+interface LayoutProps {
+  children: ReactNode;
+}
+
 export default function RootLayout({ children }: LayoutProps) {
   return (
     <html lang="en">
-      <head>
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-      </head>
-      <body suppressHydrationWarning={true}>
-        <SidebarProvider>
-          <div className="min-h-screen flex flex-col">
-            {/* Main content area */}
-            <main className="flex-grow">
-              {children}
-            </main>
-
-            {/* Toaster for notifications */}
-            <Toaster />
-          </div>
-        </SidebarProvider>
+      <body className="min-h-screen flex flex-col bg-gray-100" suppressHydrationWarning={true}>
+        <ReduxProvider>
+          <SidebarProvider>
+            <main className="flex-grow">{children}</main>
+          </SidebarProvider>
+          <Toaster />
+        </ReduxProvider>
       </body>
     </html>
   );

@@ -22,10 +22,11 @@ const QuestionsPage = () => {
 
   const [totalPages, setTotalPages] = useState(1);
   const searchParams = useSearchParams();
-   const router = useRouter();
+  const router = useRouter();
   const queryPage = searchParams.get("page");
-  const [currentPage, setCurrentPage] = useState<number>(queryPage ? parseInt(queryPage, 10) : 1);
-
+  const [currentPage, setCurrentPage] = useState<number>(
+    queryPage ? parseInt(queryPage, 10) : 1
+  );
 
   // Fetch danh sách câu hỏi từ server
   const loadQuestions = async () => {
@@ -34,7 +35,7 @@ const QuestionsPage = () => {
       const response = await fetchQuestions();
       const questionArray = Array.isArray(response.data) ? response.data : [];
       setQuestions(questionArray);
-      
+
       // Nhóm câu hỏi theo bài quiz
       const groupedByQuiz = questionArray.reduce<Record<string, Question[]>>(
         (acc, question) => {
@@ -65,7 +66,7 @@ const QuestionsPage = () => {
     // Kiểm tra nếu là lần đầu tiên vào trang
     if (!queryPage && !isFirstVisit) {
       setCurrentPage(1);
-      router.push('?page=1');
+      router.push("?page=1");
       setIsFirstVisit(true); // Đánh dấu là đã truy cập
     } else if (queryPage) {
       setCurrentPage(parseInt(queryPage, 10));
@@ -209,7 +210,9 @@ const QuestionsPage = () => {
                           )}
                         </td>
                         <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-                          <Link href={`/dashboard/question/update/${question.question_id}`}>
+                          <Link
+                            href={`/dashboard/question/update/${question.question_id}`}
+                          >
                             <Button
                               className="p-2 text-blue-600 hover:bg-blue-100 transition-all"
                               variant="ghost"
@@ -240,25 +243,38 @@ const QuestionsPage = () => {
             <p>Không có kết quả phù hợp</p>
           )}
 
-          <div className="flex justify-between mt-4">
+          <div className="flex items-center justify-center mt-6 space-x-2">
             <Button
-              onClick={handlePreviousPage}
+              onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="text-blue-500"
             >
               <ArrowLeft size={16} />
             </Button>
-            <span>
-              Trang {currentPage} / {totalPages}
-            </span>
+
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  variant={pageNumber === currentPage ? "secondary" : "outline"}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className="px-4"
+                >
+                  {pageNumber}
+                </Button>
+              )
+            )}
+
             <Button
-              onClick={handleNextPage}
+              onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="text-blue-500"
             >
               <ArrowRight size={16} />
             </Button>
           </div>
+
+          <p className="text-center mt-4">
+            Trang {currentPage} / {totalPages}
+          </p>
         </div>
       )}
 

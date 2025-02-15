@@ -1,4 +1,4 @@
-import ForgotPasswordForm from "@/components/admin/auth/forgotForm";
+import ForgotPasswordForm from "@/components/home/auth/forgotForm";
 
 
 const ForgotPage = () => {

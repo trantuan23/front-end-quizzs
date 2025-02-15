@@ -25,7 +25,7 @@ export enum UserRole {
     email: string;
     password: string;
     role: UserRole;
-    classId?: string;
+    classId?: any;
   }
   
   export interface UpdateUserDto {
